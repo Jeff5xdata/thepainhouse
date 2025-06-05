@@ -9,6 +9,7 @@ A powerful weightlifting tracking application built with Laravel. Track your lif
 -   Create and follow workout plans
 -   Dark mode support
 -   Mobile-friendly design
+-   PWA Supported
 
 ## Installation
 
