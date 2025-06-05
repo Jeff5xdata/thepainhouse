@@ -1,16 +1,5 @@
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 relative">
-        <!-- Floating Add Exercise Button -->
-        <div style="position: absolute; right: 0; top: 50%; transform: translate(50%, -50%);" class="z-[100]">
-            <button type="button" wire:click="toggleExerciseModal"
-                class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-full shadow-xl text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-all duration-200 hover:scale-105 hover:translate-x-[-8px]">
-                <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Add Exercise
-            </button>
-        </div>
-
         <h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">Create Workout Plan</h2>
 
         @if (session()->has('message'))
@@ -187,17 +176,26 @@
                 </div>
             </div>
 
-            <div class="flex justify-end space-x-4">
-                @if($existingPlan)
-                <button type="button" wire:click="toggleDeleteConfirmModal"
-                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-800">
-                    Delete Plan
+            <div class="flex justify-between items-center space-x-4">
+                <button type="button" wire:click="toggleExerciseModal"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Exercise
                 </button>
-                @endif
-                <button type="button" wire:click="confirmSave"
-                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
-                    {{ $existingPlan ? 'Update Plan' : 'Create Plan' }}
-                </button>
+                <div class="flex space-x-4">
+                    @if($existingPlan)
+                    <button type="button" wire:click="toggleDeleteConfirmModal"
+                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-800">
+                        Delete Plan
+                    </button>
+                    @endif
+                    <button type="button" wire:click="confirmSave"
+                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                        {{ $existingPlan ? 'Update Plan' : 'Create Plan' }}
+                    </button>
+                </div>
             </div>
         </form>
     </div>
