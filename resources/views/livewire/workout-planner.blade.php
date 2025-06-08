@@ -78,7 +78,8 @@
                                             </div>
                                             <div class="flex items-center space-x-4">
                                                 <button type="button" 
-                                                    class="text-sm {{ $exerciseData['has_warmup'] ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500' }} hover:text-indigo-900 dark:hover:text-indigo-300"
+                                                    class="text-sm {{ $exerciseData['has_warmup'] ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500' }} hover:text-indigo-900 dark:hover:text-indigo-300 custom-tooltip-right"
+                                                    data-tooltip="Add warmup sets to this exercise"
                                                     wire:click="toggleWarmup({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})">
                                                     <span class="flex items-center">
                                                         <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,7 +88,8 @@
                                                         Warmup
                                                     </span>
                                                 </button>
-                                                <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                                                <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 custom-tooltip-right"
+                                                    data-tooltip="Remove this exercise"
                                                     wire:click="removeExercise({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})">
                                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

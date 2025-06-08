@@ -141,10 +141,10 @@
                         </div>
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="button" class="primary-button sm:ml-3 sm:w-auto sm:text-sm">
+                        <button type="button" class="primary-button sm:ml-3 sm:w-auto sm:text-sm custom-tooltip-left" data-tooltip="Print your workout plan">
                             Print
                         </button>
-                        <button wire:click="togglePrintModal" type="button" class="secondary-button mt-3 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button wire:click="togglePrintModal" type="button" class="secondary-button mt-3 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm custom-tooltip-left" data-tooltip="Close this window">
                             Cancel
                         </button>
                     </div>
@@ -191,10 +191,10 @@
                         </div>
                     </div>
                     <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button wire:click="copyWorkout" type="button" class="primary-button sm:ml-3 sm:w-auto sm:text-sm">
+                        <button wire:click="copyWorkout" type="button" class="primary-button sm:ml-3 sm:w-auto sm:text-sm custom-tooltip-left" data-tooltip="Copy workout to selected day">
                             Copy
                         </button>
-                        <button wire:click="toggleCopyModal" type="button" class="secondary-button mt-3 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        <button wire:click="toggleCopyModal" type="button" class="secondary-button mt-3 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm custom-tooltip-left" data-tooltip="Close this window">
                             Cancel
                         </button>
                     </div>
