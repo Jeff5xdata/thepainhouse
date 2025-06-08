@@ -4,10 +4,13 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Layout;
 use App\Models\WorkoutSession;
 use App\Models\WorkoutPlan;
 use Carbon\Carbon;
 
+#[Layout('layouts.app')]
+#[Title('Dashboard')]
 class Dashboard extends Component
 {
     private function calculateStreak($sessions)
@@ -40,7 +43,6 @@ class Dashboard extends Component
         return $streak;
     }
 
-    #[Title('Dashboard')]
     public function render()
     {
         $recentSessions = WorkoutSession::with(['workoutPlan', 'exerciseSets.exercise'])

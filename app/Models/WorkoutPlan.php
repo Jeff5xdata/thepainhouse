@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class WorkoutPlan extends Model
 {
@@ -31,6 +32,11 @@ class WorkoutPlan extends Model
         return $this->hasMany(WorkoutSession::class);
     }
 
+    public function workoutSchedules(): HasMany
+    {
+        return $this->hasMany(WorkoutSchedule::class);
+    }
+
     public function scheduleItems(): HasMany
     {
         return $this->hasMany(WorkoutPlanSchedule::class);
@@ -53,15 +59,43 @@ class WorkoutPlan extends Model
     }
 
     /**
+     * Get the cache key for a specific day's schedule
+     */
+    protected function getScheduleCacheKey(int $week, string $day): string
+    {
+        return "workout_plan_{$this->id}_week_{$week}_day_{$day}";
+    }
+
+    /**
      * Get the schedule for a specific week and day
      */
     public function getScheduleForDay(int $week, string $day)
     {
-        return $this->scheduleItems()
-            ->where('week_number', $week)
-            ->where('day_of_week', $day)
-            ->orderBy('order_in_day')
-            ->with('exercise')
-            ->get();
+        $cacheKey = $this->getScheduleCacheKey($week, $day);
+        
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($week, $day) {
+            return $this->scheduleItems()
+                ->where('week_number', $week)
+                ->where('day_of_week', $day)
+                ->orderBy('order_in_day')
+                ->with('exercise')
+                ->get();
+        });
+    }
+
+    /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saved(function ($model) {
+            Cache::flush();
+        });
+
+        static::deleted(function ($model) {
+            Cache::flush();
+        });
     }
 }

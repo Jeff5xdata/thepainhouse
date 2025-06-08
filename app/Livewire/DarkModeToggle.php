@@ -10,21 +10,15 @@ class DarkModeToggle extends Component
 
     public function mount()
     {
-        // Get the dark mode state from session or localStorage
-        $this->darkMode = session('darkMode', false);
-        
-        // Dispatch initial state to Alpine
-        $this->dispatch('dark-mode-toggled', darkMode: $this->darkMode);
+        // Initialize dark mode from localStorage via JavaScript
+        $this->darkMode = false; // Default value, will be updated by JavaScript
     }
 
     public function toggleDarkMode()
     {
         $this->darkMode = !$this->darkMode;
         
-        // Persist state in session
-        session(['darkMode' => $this->darkMode]);
-        
-        // Dispatch to Alpine
+        // Dispatch event to update Alpine.js state
         $this->dispatch('dark-mode-toggled', darkMode: $this->darkMode);
     }
 

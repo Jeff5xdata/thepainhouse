@@ -8,6 +8,7 @@ use App\Models\WorkoutPlanSchedule;
 use Livewire\Component;
 use Livewire\Attributes\Rule;
 use Livewire\Attributes\Layout;
+use Illuminate\Support\Facades\DB;
 
 #[Layout('components.layouts.app')]
 class WorkoutPlanner extends Component
@@ -33,6 +34,17 @@ class WorkoutPlanner extends Component
     public $showConfirmModal = false;
     public $showDeleteConfirmModal = false;
     public $showPrintModal = false;
+    public $selectedExercise = null;
+    public $exerciseModal = false;
+    public $categories;
+    public $workoutPlan;
+    public $planName;
+    public $weeksDuration = 1;
+    public $exerciseDetails = [];
+    public $editingExercise = null;
+    public $editingScheduleItem = null;
+    public $showDebug = false;
+    public $debugMessage = '';
 
     protected $daysOfWeek = [
         'monday' => 'Monday',
@@ -51,40 +63,106 @@ class WorkoutPlanner extends Component
         'schedule' => 'array',
     ];
 
-    public function mount()
+    public function mount($week = null, $day = null, $plan_id = null)
     {
-        $this->exercises = Exercise::orderBy('name')->get();
-        $this->filteredExercises = $this->exercises;
-        $this->existingPlan = WorkoutPlan::where('user_id', auth()->id())->first();
+        // Initialize with passed week and day or defaults
+        $this->currentWeek = $week ?? 1;
+        $this->currentDay = $day ?? 'monday';
 
-        if ($this->existingPlan) {
-            $this->name = $this->existingPlan->name;
-            $this->description = $this->existingPlan->description;
-            $this->weeks_duration = $this->existingPlan->weeks_duration;
-            
-            // Load schedule from WorkoutPlanSchedule
-            for ($week = 1; $week <= $this->weeks_duration; $week++) {
-                foreach ($this->daysOfWeek as $day => $dayName) {
-                    $scheduleItems = $this->existingPlan->getScheduleForDay($week, $day);
-                    if ($scheduleItems->isNotEmpty()) {
-                        $this->schedule[$week][$day] = $scheduleItems->map(function($item) {
-                            return [
-                                'exercise_id' => $item->exercise_id,
-                                'sets' => $item->sets,
-                                'reps' => $item->reps,
-                                'is_time_based' => $item->is_time_based,
-                                'time_in_seconds' => $item->time_in_seconds,
-                                'has_warmup' => $item->has_warmup,
-                                'warmup_sets' => $item->warmup_sets,
-                                'warmup_reps' => $item->warmup_reps,
-                                'warmup_time_in_seconds' => $item->warmup_time_in_seconds,
-                                'warmup_weight_percentage' => $item->warmup_weight_percentage,
-                                'order_in_day' => $item->order_in_day,
-                            ];
-                        })->toArray();
-                    }
-                }
+        $this->exercises = Exercise::orderBy('name')->get();
+        $this->categories = config('exercises.categories');
+        
+        if ($plan_id) {
+            // Load specific plan for editing
+            $this->workoutPlan = WorkoutPlan::with([
+                'exercises' => function($query) {
+                    $query->withPivot([
+                        'default_sets',
+                        'default_reps',
+                        'default_weight',
+                        'has_warmup',
+                        'warmup_sets',
+                        'warmup_reps',
+                        'warmup_weight_percentage'
+                    ]);
+                },
+                'scheduleItems.exercise'
+            ])
+            ->where('user_id', auth()->id())
+            ->findOrFail($plan_id);
+        } else {
+            // Find active workout plan
+            $this->workoutPlan = WorkoutPlan::with([
+                'exercises' => function($query) {
+                    $query->withPivot([
+                        'default_sets',
+                        'default_reps',
+                        'default_weight',
+                        'has_warmup',
+                        'warmup_sets',
+                        'warmup_reps',
+                        'warmup_weight_percentage'
+                    ]);
+                },
+                'scheduleItems.exercise'
+            ])
+            ->where('user_id', auth()->id())
+            ->where('is_active', true)
+            ->first();
+        }
+
+        if ($this->workoutPlan) {
+            // Initialize form with existing plan data
+            $this->name = $this->workoutPlan->name;
+            $this->description = $this->workoutPlan->description;
+            $this->weeks_duration = $this->workoutPlan->weeks_duration;
+            $this->loadSchedule();
+        } else {
+            // Initialize empty schedule for new plan
+            $this->schedule = [];
+            $this->name = '';
+            $this->description = '';
+            $this->weeks_duration = 1;
+        }
+    }
+
+    protected function loadSchedule()
+    {
+        if (!$this->workoutPlan) {
+            $this->schedule = [];
+            return;
+        }
+
+        $scheduleItems = $this->workoutPlan->scheduleItems()
+            ->with('exercise')
+            ->orderBy('week_number')
+            ->orderBy('day_of_week')
+            ->orderBy('order_in_day')
+            ->get();
+
+        $this->schedule = [];
+
+        foreach ($scheduleItems as $item) {
+            if (!isset($this->schedule[$item->week_number])) {
+                $this->schedule[$item->week_number] = [];
             }
+            if (!isset($this->schedule[$item->week_number][$item->day_of_week])) {
+                $this->schedule[$item->week_number][$item->day_of_week] = [];
+            }
+
+            $this->schedule[$item->week_number][$item->day_of_week][] = [
+                'exercise_id' => $item->exercise_id,
+                'is_time_based' => $item->is_time_based,
+                'sets' => $item->sets,
+                'reps' => $item->reps,
+                'time_in_seconds' => $item->time_in_seconds,
+                'has_warmup' => $item->has_warmup,
+                'warmup_sets' => $item->warmup_sets,
+                'warmup_reps' => $item->warmup_reps,
+                'warmup_time_in_seconds' => $item->warmup_time_in_seconds,
+                'warmup_weight_percentage' => $item->warmup_weight_percentage,
+                'exercise' => $item->exercise,
+            ];
         }
     }
 
@@ -92,8 +170,8 @@ class WorkoutPlanner extends Component
     {
         $this->filteredExercises = $this->exercises->filter(function($exercise) {
             return str_contains(strtolower($exercise->name), strtolower($this->search)) ||
-                   str_contains(strtolower($exercise->category), strtolower($this->search)) ||
-                   str_contains(strtolower($exercise->equipment), strtolower($this->search));
+                    str_contains(strtolower($exercise->category), strtolower($this->search)) ||
+                    str_contains(strtolower($exercise->equipment), strtolower($this->search));
         })->values();
     }
 
@@ -201,79 +279,132 @@ class WorkoutPlanner extends Component
 
     public function confirmSave()
     {
-        if ($this->existingPlan) {
-            $this->toggleConfirmModal();
+        if ($this->workoutPlan) {
+            // If editing an existing plan, show confirmation dialog
+            $this->dispatch('open-confirm-modal');
         } else {
+            // If creating a new plan, save directly
             $this->save();
         }
     }
 
     public function deletePlan()
     {
-        if ($this->existingPlan) {
-            $this->existingPlan->delete();
-            $this->existingPlan = null;
-            $this->name = '';
-            $this->description = '';
-            $this->weeks_duration = 1;
-            $this->schedule = [];
-            $this->initializeSchedule();
-            $this->showDeleteConfirmModal = false;
+        try {
+            if (!$this->workoutPlan) {
+                session()->flash('error', 'No workout plan found to delete.');
+                return;
+            }
+
+            DB::beginTransaction();
+
+            // Delete schedule items first (due to foreign key constraint)
+            $this->workoutPlan->scheduleItems()->delete();
+            
+            // Delete the plan
+            $this->workoutPlan->delete();
+
+            DB::commit();
+
             session()->flash('message', 'Workout plan deleted successfully!');
+            return $this->redirect(route('dashboard'), navigate: true);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Failed to delete workout plan. Please try again.');
+            \Log::error('Workout plan delete error: ' . $e->getMessage());
         }
+
+        $this->showDeleteConfirmModal = false;
     }
 
     public function save()
     {
-        $this->validate();
+        $this->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'weeks_duration' => 'required|integer|min:1',
+        ]);
 
-        if ($this->existingPlan) {
-            // Delete existing schedule items
-            $this->existingPlan->scheduleItems()->delete();
-            $this->existingPlan->update([
-                'name' => $this->name,
-                'description' => $this->description,
-                'weeks_duration' => $this->weeks_duration,
-            ]);
-        } else {
-            $this->existingPlan = WorkoutPlan::create([
-                'name' => $this->name,
-                'description' => $this->description,
-                'weeks_duration' => $this->weeks_duration,
-                'user_id' => auth()->id(),
-            ]);
-        }
+        try {
+            DB::beginTransaction();
 
-        // Create new schedule items
-        foreach ($this->schedule as $week => $days) {
-            foreach ($days as $day => $exercises) {
-                foreach ($exercises as $exercise) {
-                    // For time-based exercises, ensure reps is 0
-                    $reps = $exercise['is_time_based'] ? 0 : ($exercise['reps'] ?? 10);
-                    
-                    WorkoutPlanSchedule::create([
-                        'workout_plan_id' => $this->existingPlan->id,
-                        'exercise_id' => $exercise['exercise_id'],
-                        'week_number' => $week,
-                        'day_of_week' => $day,
-                        'order_in_day' => $exercise['order_in_day'],
-                        'is_time_based' => $exercise['is_time_based'],
-                        'sets' => $exercise['sets'],
-                        'reps' => $reps,
-                        'time_in_seconds' => $exercise['time_in_seconds'],
-                        'has_warmup' => $exercise['has_warmup'],
-                        'warmup_sets' => $exercise['warmup_sets'],
-                        'warmup_reps' => $exercise['warmup_reps'],
-                        'warmup_time_in_seconds' => $exercise['warmup_time_in_seconds'],
-                        'warmup_weight_percentage' => $exercise['warmup_weight_percentage'],
-                    ]);
+            if ($this->workoutPlan) {
+                // Update existing plan
+                $this->workoutPlan->update([
+                    'name' => $this->name,
+                    'description' => $this->description,
+                    'weeks_duration' => $this->weeks_duration,
+                ]);
+
+                // Delete existing schedule items
+                $this->workoutPlan->scheduleItems()->delete();
+            } else {
+                // Create new plan
+                $this->workoutPlan = WorkoutPlan::create([
+                    'name' => $this->name,
+                    'description' => $this->description,
+                    'weeks_duration' => $this->weeks_duration,
+                    'user_id' => auth()->id(),
+                    'is_active' => true,
+                ]);
+            }
+
+            // Create or update schedule items
+            if (!empty($this->schedule)) {
+                $scheduleItems = [];
+                
+                foreach ($this->schedule as $week => $days) {
+                    foreach ($days as $day => $exercises) {
+                        foreach ($exercises as $index => $exercise) {
+                            if (empty($exercise['exercise_id'])) {
+                                continue; // Skip if no exercise is selected
+                            }
+                            
+                            // For time-based exercises, ensure reps is 0
+                            $reps = isset($exercise['is_time_based']) && $exercise['is_time_based'] ? 0 : ($exercise['reps'] ?? 10);
+                            
+                            $scheduleItems[] = [
+                                'workout_plan_id' => $this->workoutPlan->id,
+                                'exercise_id' => $exercise['exercise_id'],
+                                'week_number' => $week,
+                                'day_of_week' => $day,
+                                'order_in_day' => $index,
+                                'is_time_based' => $exercise['is_time_based'] ?? false,
+                                'sets' => $exercise['sets'] ?? 3,
+                                'reps' => $reps,
+                                'time_in_seconds' => $exercise['time_in_seconds'] ?? 0,
+                                'has_warmup' => $exercise['has_warmup'] ?? false,
+                                'warmup_sets' => $exercise['warmup_sets'] ?? 0,
+                                'warmup_reps' => $exercise['warmup_reps'] ?? 0,
+                                'warmup_time_in_seconds' => $exercise['warmup_time_in_seconds'] ?? 0,
+                                'warmup_weight_percentage' => $exercise['warmup_weight_percentage'] ?? 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
+                    }
+                }
+
+                // Batch insert all schedule items
+                if (!empty($scheduleItems)) {
+                    WorkoutPlanSchedule::insert($scheduleItems);
                 }
             }
-        }
 
-        $this->showConfirmModal = false;
-        $this->dispatch('workoutPlanCreated', $this->existingPlan->id);
-        session()->flash('message', $this->existingPlan ? 'Workout plan updated successfully!' : 'Workout plan created successfully!');
+            DB::commit();
+            
+            session()->flash('message', $this->workoutPlan ? 'Workout plan updated successfully!' : 'Workout plan created successfully!');
+            
+            // Redirect to the dashboard
+            return $this->redirect(route('workout.plan', ['id' => $this->workoutPlan->id]), navigate: true);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Failed to save workout plan. Please try again. Error: ' . $e->getMessage());
+            \Log::error('Workout plan save error: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+        }
     }
 
     public function formatDuration($seconds)

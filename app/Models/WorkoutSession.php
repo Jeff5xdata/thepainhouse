@@ -9,33 +9,32 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class WorkoutSession extends Model
 {
     protected $fillable = [
-        'workout_plan_id',
         'user_id',
-        'date',
-        'week_number',
-        'day_of_week',
-        'status',
-        'notes',
-        'completed_at',
+        'workout_plan_id',
         'name',
+        'date',
+        'week',
+        'day',
+        'status',
+        'completed_at',
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'datetime',
         'completed_at' => 'datetime',
     ];
 
-    public function workoutPlan(): BelongsTo
-    {
-        return $this->belongsTo(WorkoutPlan::class);
-    }
-
-    public function user(): BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function exerciseSets(): HasMany
+    public function workoutPlan()
+    {
+        return $this->belongsTo(WorkoutPlan::class);
+    }
+
+    public function exerciseSets()
     {
         return $this->hasMany(ExerciseSet::class);
     }

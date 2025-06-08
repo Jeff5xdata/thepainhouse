@@ -20,6 +20,16 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         
         @livewireStyles
+
+        <!-- Dark mode initialization -->
+        <script>
+            // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+            if (localStorage.darkMode === 'true' || (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        </script>
     </head>
     <body class="antialiased h-full bg-gray-100 dark:bg-gray-900">
         <div class="min-h-full flex flex-col">

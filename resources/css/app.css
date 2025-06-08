@@ -1,3 +1,187 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    /* Layout Components */
+    .page-container {
+        @apply max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8;
+    }
+
+    .section-header {
+        @apply flex justify-between items-center mb-6;
+    }
+
+    .section-title {
+        @apply text-2xl font-bold text-gray-900 dark:text-gray-100;
+    }
+
+    .section-description {
+        @apply text-sm text-gray-600 dark:text-gray-400 mt-1;
+    }
+
+    /* Form Components */
+    .input-field {
+        @apply block w-full rounded-md border-0 py-2 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:focus:ring-indigo-500 sm:text-sm sm:leading-6 bg-white dark:bg-gray-800;
+    }
+
+    .input-label {
+        @apply block text-sm font-medium text-gray-700 dark:text-gray-300;
+    }
+
+    .input-error {
+        @apply mt-2 text-sm text-red-600 dark:text-red-400;
+    }
+
+    /* Card Components */
+    .content-card {
+        @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-4 hover:shadow-md transition-shadow duration-200;
+    }
+
+    .offline-container {
+        @apply min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900;
+    }
+
+    .offline-card {
+        @apply max-w-md w-full space-y-8 p-10 bg-white dark:bg-gray-800 rounded-xl shadow-md;
+    }
+
+    /* Button Components */
+    .primary-button {
+        @apply inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+    }
+
+    .secondary-button {
+        @apply inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700;
+    }
+
+    .icon-button {
+        @apply p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-150 focus:outline-none;
+    }
+
+    /* Exercise Components */
+    .exercise-title {
+        @apply font-medium text-gray-900 dark:text-gray-100;
+    }
+
+    .exercise-details {
+        @apply mt-2 text-sm text-gray-500 dark:text-gray-400;
+    }
+
+    .exercise-order {
+        @apply text-sm text-gray-500 dark:text-gray-400;
+    }
+
+    .warmup-text {
+        @apply ml-2 text-yellow-600 dark:text-yellow-400;
+    }
+}
+
+/* Custom Tooltip */
+.custom-tooltip-right {
+    position: relative;
+}
+
+.custom-tooltip-right::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 10px;
+    padding: 8px 12px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.custom-tooltip-right::after {
+    content: "";
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 2px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
+    rotate: 180deg;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.custom-tooltip-right:hover::before,
+.custom-tooltip-right:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Dark mode support */
+.dark .custom-tooltip-right::before {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: black;
+}
+
+.dark .custom-tooltip-right::after {
+    border-color: transparent rgba(255, 255, 255, 0.9) transparent transparent;
+}
+
+/* Left-facing tooltip variant */
+.custom-tooltip-left {
+    position: relative;
+}
+
+.custom-tooltip-left::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 10px;
+    padding: 8px 12px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.custom-tooltip-left::after {
+    content: "";
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 2px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent transparent rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+}
+
+.custom-tooltip-left:hover::before,
+.custom-tooltip-left:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Dark mode support for left-facing tooltip */
+.dark .custom-tooltip-left::before {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: black;
+}
+
+.dark .custom-tooltip-left::after {
+    border-color: transparent transparent transparent rgba(255, 255, 255, 0.9);
+}

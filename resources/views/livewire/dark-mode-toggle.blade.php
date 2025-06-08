@@ -1,18 +1,31 @@
 <button
+    x-data="{ darkMode: $persist(false).as('darkMode') }"
+    x-init="
+        $wire.darkMode = darkMode;
+        $watch('darkMode', value => {
+            if (value) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        $wire.on('dark-mode-toggled', ({ darkMode: newDarkMode }) => {
+            darkMode = newDarkMode;
+        });"
     wire:click="toggleDarkMode"
     type="button"
     class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
     role="switch"
-    :class="{ 'bg-gray-200': !$wire.darkMode, 'bg-indigo-600': $wire.darkMode }"
-    :aria-checked="$wire.darkMode"
+    :class="{ 'bg-gray-200': !darkMode, 'bg-indigo-600': darkMode }"
+    :aria-checked="darkMode"
 >
     <span class="sr-only">Toggle dark mode</span>
     <span
-        :class="{ 'translate-x-0': !$wire.darkMode, 'translate-x-5': $wire.darkMode }"
+        :class="{ 'translate-x-0': !darkMode, 'translate-x-5': darkMode }"
         class="pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
     >
         <span
-            :class="{ 'opacity-0 duration-100 ease-out': $wire.darkMode, 'opacity-100 duration-200 ease-in': !$wire.darkMode }"
+            :class="{ 'opacity-0 duration-100 ease-out': darkMode, 'opacity-100 duration-200 ease-in': !darkMode }"
             class="absolute inset-0 flex h-full w-full items-center justify-center transition-opacity"
             aria-hidden="true"
         >
@@ -22,7 +35,7 @@
             </svg>
         </span>
         <span
-            :class="{ 'opacity-100 duration-200 ease-in': $wire.darkMode, 'opacity-0 duration-100 ease-out': !$wire.darkMode }"
+            :class="{ 'opacity-100 duration-200 ease-in': darkMode, 'opacity-0 duration-100 ease-out': !darkMode }"
             class="absolute inset-0 flex h-full w-full items-center justify-center transition-opacity"
             aria-hidden="true"
         >

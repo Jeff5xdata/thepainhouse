@@ -5,6 +5,15 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
+        <style>
+            html {
+                -webkit-text-size-adjust: 100%;
+                -moz-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+            }
+        </style>
+
         <title>{{ config('app.name', 'Workout Tracker') }}</title>
 
         <!-- PWA -->
@@ -59,7 +68,7 @@
                         <div class="flex items-center space-x-4">
                             <!-- Hamburger Menu Button -->
                             <div class="relative">
-                                <button @click="menuOpen = !menuOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-800 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
+                                <button @click="menuOpen = !menuOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
                                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                         <path :class="{'hidden': menuOpen, 'inline-flex': !menuOpen }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                         <path :class="{'hidden': !menuOpen, 'inline-flex': menuOpen }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -78,58 +87,81 @@
                                     @click.away="menuOpen = false"
                                     @keydown.escape.window="menuOpen = false">
                                     
-                                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" 
+                                    <a href="{{ route('dashboard') }}" 
                                         class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
-                                        @click="menuOpen = false">
+                                        @click="menuOpen = false"
+                                        wire:navigate>
                                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                                         </svg>
                                         {{ __('Dashboard') }}
-                                    </x-nav-link>
+                                    </a>
 
-                                    <x-nav-link :href="route('workout.planner')" :active="request()->routeIs('workout.planner')" 
+                                    <a href="{{ route('workout.planner') }}" 
                                         class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
-                                        @click="menuOpen = false">
+                                        @click="menuOpen = false"
+                                        wire:navigate>
                                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                         </svg>
-                                        {{ __('Workout Plan') }}
-                                    </x-nav-link>
+                                        {{ __('Workout Planner') }}
+                                    </a>
 
-                                    <x-nav-link :href="route('exercises.index')" :active="request()->routeIs('exercises.index')" 
-                                        class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
-                                        @click="menuOpen = false">
-                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                                        </svg>
-                                        {{ __('Exercises') }}
-                                    </x-nav-link>
+                                        <a href="{{ route('workout.plan', 0) }}" 
+                                            class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                            @click="menuOpen = false"
+                                            wire:navigate>
+                                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                                            </svg>
+                                            {{ __('View Plan') }}
+                                        </a>
 
-                                    <x-nav-link :href="route('progress')" :active="request()->routeIs('progress')" 
+                                    <a href="{{ route('workout.history') }}"
                                         class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
-                                        @click="menuOpen = false">
+                                        @click="menuOpen = false"
+                                        wire:navigate>
                                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        {{ __('Progress') }}
-                                    </x-nav-link>
+                                        {{ __('Workout History') }}
+                                    </a>
 
-                                    {{-- Nutrition link temporarily disabled
-                                    <x-nav-link :href="route('nutrition')" :active="request()->routeIs('nutrition')" 
+                                    <a href="{{ route('workout.progress') }}" 
                                         class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
-                                        @click="menuOpen = false">
+                                        @click="menuOpen = false"
+                                        wire:navigate>
                                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        {{ __('Nutrition') }}
-                                    </x-nav-link>
-                                    --}}
+                                        {{ __('Workout Progress') }}
+                                    </a>
+
+                                    <a href="{{ route('workout.exercises') }}" 
+                                        class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                        @click="menuOpen = false"
+                                        wire:navigate>
+                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2M7 7h10" />
+                                        </svg>
+                                        {{ __('Workout Exercises') }}
+                                    </a>
+
+                                    <a href="{{ route('workout.session') }}" 
+                                        class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                        @click="menuOpen = false"
+                                        wire:navigate>
+                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                        {{ __('Start Workout') }}
+                                    </a>
                                 </div>
                             </div>
 
                             <!-- Logo -->
                             <div class="flex-shrink-0 flex items-center">
-                                <a href="{{ route('dashboard') }}" class="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                                <a href="{{ route('dashboard') }}" class="text-xl font-bold text-indigo-600 dark:text-indigo-400" wire:navigate>
                                     The Pain House
                                 </a>
                             </div>
@@ -154,7 +186,7 @@
                                     </x-slot>
 
                                     <x-slot name="content">
-                                        <x-dropdown-link :href="route('profile.edit')">
+                                        <x-dropdown-link :href="route('profile.edit')" wire:navigate>
                                             {{ __('Profile') }}
                                         </x-dropdown-link>
 

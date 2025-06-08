@@ -1,12 +1,25 @@
 var staticCacheName = "hl-v" + new Date().getTime();
-var filesToCache = ["/offline", "/css/app.css", "/js/app.js", "/images/hl.png"];
+var filesToCache = [
+    "/offline",
+    "/build/assets/app.css",
+    "/build/assets/app.js",
+    "/favicon.ico",
+];
 
 // Cache on install
 self.addEventListener("install", (event) => {
     this.skipWaiting();
     event.waitUntil(
         caches.open(staticCacheName).then((cache) => {
-            return cache.addAll(filesToCache);
+            // Cache each file individually to handle failures gracefully
+            return Promise.allSettled(
+                filesToCache.map((file) =>
+                    cache.add(file).catch((err) => {
+                        console.error("Failed to cache:", file, err);
+                        return Promise.resolve(); // Continue despite error
+                    })
+                )
+            );
         })
     );
 });
@@ -34,7 +47,7 @@ self.addEventListener("fetch", (event) => {
                 return response || fetch(event.request);
             })
             .catch(() => {
-                return caches.match("offline");
+                return caches.match("/offline");
             })
     );
 });

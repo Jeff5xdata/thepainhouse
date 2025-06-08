@@ -14,23 +14,17 @@ class ExerciseSet extends Model
         'workout_session_id',
         'exercise_id',
         'set_number',
-        'reps',
         'weight',
-        'completed',
-        'notes',
+        'reps',
         'is_warmup',
-        'time_in_seconds',
-        'used_progression',
+        'completed',
     ];
 
     protected $casts = [
-        'completed' => 'boolean',
-        'is_warmup' => 'boolean',
-        'set_number' => 'integer',
+        'weight' => 'float',
         'reps' => 'integer',
-        'weight' => 'decimal:2',
-        'time_in_seconds' => 'integer',
-        'used_progression' => 'boolean',
+        'is_warmup' => 'boolean',
+        'completed' => 'boolean',
     ];
 
     protected $attributes = [
@@ -39,12 +33,12 @@ class ExerciseSet extends Model
         'used_progression' => false,
     ];
 
-    public function workoutSession(): BelongsTo
+    public function workoutSession()
     {
         return $this->belongsTo(WorkoutSession::class);
     }
 
-    public function exercise(): BelongsTo
+    public function exercise()
     {
         return $this->belongsTo(Exercise::class);
     }
