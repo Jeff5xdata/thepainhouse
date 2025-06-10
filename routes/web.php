@@ -12,8 +12,10 @@ use App\Livewire\ExerciseList;
 use App\Livewire\WorkoutPlanView;
 use App\Livewire\WorkoutHistory;
 use App\Livewire\WorkoutSessionDetails;
+use App\Livewire\WorkoutSettings;
 
 use App\Livewire\ExerciseManager;
+use App\Http\Controllers\ShareLinkController;
 use Illuminate\Support\Facades\Route;
 
 // PWA Routes
@@ -27,6 +29,9 @@ Route::get('/', function () {
     return redirect()->route('welcome');
 });
 
+// Public routes
+Route::get('/shared/workout-plans/{token}', [ShareLinkController::class, 'show'])->name('workout-plans.shared');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
@@ -37,12 +42,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/workout/progress', WorkoutProgress::class)->name('workout.progress');
     Route::get('/workout/history', WorkoutHistory::class)->name('workout.history');
     Route::get('/workout/history/{workoutSession}', WorkoutSessionDetails::class)->name('workout.history.details');
+    Route::get('/workout/settings', WorkoutSettings::class)->name('workout.settings');
 });
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/workout-plans/{workoutPlan}/share', [ShareLinkController::class, 'generateLink'])->name('workout-plans.share');
+    Route::post('/workout-plans/{workoutPlan}/share-emails', [ShareLinkController::class, 'shareEmails'])->name('workout-plans.share-emails');
 });
 
 Route::view('/offline', 'offline')->name('offline');

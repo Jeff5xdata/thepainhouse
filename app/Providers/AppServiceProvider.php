@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use App\Livewire\DarkModeToggle;
 use App\Livewire\Dashboard;
+use Illuminate\Support\Facades\Blade;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,5 +25,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Livewire::component('dark-mode-toggle', DarkModeToggle::class);
         Livewire::component('dashboard', Dashboard::class);
+
+        // Register the guest layout component
+        Blade::component('guest', \App\View\Components\Layouts\Guest::class);
     }
 }

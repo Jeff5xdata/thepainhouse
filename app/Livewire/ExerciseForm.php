@@ -26,7 +26,6 @@ class ExerciseForm extends Component
 
     public $exerciseId = null;
     public $isEditing = false;
-    public $showDebug = false;
 
     public function mount($exerciseId = null)
     {
@@ -60,10 +59,7 @@ class ExerciseForm extends Component
 
     public function updated($property)
     {
-        Log::info('Property updated', [
-            'property' => $property,
-            'value' => $this->$property
-        ]);
+        // Remove debug logging
     }
 
     public function save()
@@ -74,8 +70,6 @@ class ExerciseForm extends Component
         }
 
         try {
-            DB::enableQueryLog();
-            
             $validated = $this->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
@@ -97,7 +91,7 @@ class ExerciseForm extends Component
                 session()->flash('message', 'Exercise created successfully!');
             }
 
-            // Reset form fields and debug state
+            // Reset form fields
             $this->reset(['name', 'description', 'category', 'equipment']);
             
             // Redirect to the exercises list
@@ -105,11 +99,7 @@ class ExerciseForm extends Component
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error: ' . $e->getMessage());
-            Log::error('Error saving exercise', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'queries' => DB::getQueryLog()
-            ]);
+            Log::error('Error saving exercise: ' . $e->getMessage());
         }
     }
 

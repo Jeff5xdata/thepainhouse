@@ -434,21 +434,27 @@ class WorkoutPlanner extends Component
         $exercise = $this->exercises->firstWhere('id', $exerciseId);
         $orderInDay = count($this->schedule[$this->currentWeek][$this->currentDay]);
 
-        $this->schedule[$this->currentWeek][$this->currentDay][] = [
+        // Get user's workout settings
+        $settings = auth()->user()->workoutSettings;
+
+        $exerciseData = [
             'exercise_id' => $exerciseId,
-            'sets' => 3,
-            'reps' => 10,
-            'is_time_based' => false,
-            'time_in_seconds' => null,
-            'has_warmup' => false,
-            'warmup_sets' => null,
-            'warmup_reps' => null,
-            'warmup_time_in_seconds' => null,
-            'warmup_weight_percentage' => null,
+            'sets' => $settings ? $settings->default_work_sets : 3,
+            'reps' => $settings ? $settings->default_work_reps : 10,
+            'weight' => 0,
             'order_in_day' => $orderInDay,
+            'has_warmup' => false,
+            'warmup_sets' => $settings ? $settings->default_warmup_sets : 2,
+            'warmup_reps' => $settings ? $settings->default_warmup_reps : 10,
+            'warmup_weight_percentage' => $settings ? $settings->default_warmup_weight_percentage : 50,
+            'exercise_name' => $exercise->name,
+            'notes' => '',
+            'is_time_based' => false,
+            'time' => null
         ];
 
-        $this->showExerciseModal = false;
+        $this->schedule[$this->currentWeek][$this->currentDay][] = $exerciseData;
+        $this->toggleExerciseModal();
     }
 
     public function toggleWarmup($week, $day, $index)
@@ -459,9 +465,12 @@ class WorkoutPlanner extends Component
 
         $this->schedule[$week][$day][$index]['has_warmup'] = !$this->schedule[$week][$day][$index]['has_warmup'];
         
+        // Get user's workout settings
+        $settings = auth()->user()->workoutSettings;
+        
         if ($this->schedule[$week][$day][$index]['has_warmup']) {
-            $this->schedule[$week][$day][$index]['warmup_sets'] = 2;
-            $this->schedule[$week][$day][$index]['warmup_reps'] = 10;
+            $this->schedule[$week][$day][$index]['warmup_sets'] = $settings ? $settings->default_warmup_sets : 2;
+            $this->schedule[$week][$day][$index]['warmup_reps'] = $settings ? $settings->default_warmup_reps : 10;
             $this->schedule[$week][$day][$index]['warmup_weight_percentage'] = 50;
         } else {
             $this->schedule[$week][$day][$index]['warmup_sets'] = null;

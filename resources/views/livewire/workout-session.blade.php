@@ -16,7 +16,7 @@
                         <div class="text-center">
                             <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Rest Timer</h3>
                             <div class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-6" id="timerDisplay">
-                                60
+                                {{ auth()->user()->workoutSettings?->default_rest_timer ?? 60 }}
                             </div>
                             <button type="button" 
                                 onclick="closeRestTimer()"
@@ -37,7 +37,7 @@
                         modal.classList.remove('hidden');
                         modal.classList.add('flex');
                         
-                        timeLeft = 60;
+                        timeLeft = {{ auth()->user()->workoutSettings?->default_rest_timer ?? 60 }};
                         timerDisplay.textContent = timeLeft;
                         
                         timer = setInterval(() => {

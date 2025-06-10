@@ -14,26 +14,6 @@
             </div>
         @endif
 
-        {{-- Debug Panel (Commented out)
-        @if($showDebug)
-            <div class="bg-gray-100 dark:bg-gray-700 p-4 mb-4 rounded">
-                <h3 class="font-bold mb-2 dark:text-gray-200">Debug Info:</h3>
-                <pre class="text-xs dark:text-gray-300">
-                    Name: {{ $name }}
-                    Category: {{ $category }}
-                    Equipment: {{ $equipment }}
-                    Description: {{ $description }}
-                    Is Editing: {{ $isEditing ? 'true' : 'false' }}
-                    Debug Message: {{ $debugMessage }}
-                </pre>
-                <button type="button" wire:click="testButton"
-                    class="mt-2 px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500">
-                    Test Livewire Connection
-                </button>
-            </div>
-        @endif
-        --}}
-
         <form wire:submit.prevent="save" class="space-y-6">
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Exercise Name</label>
