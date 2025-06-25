@@ -2,18 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    /* Mobile-specific base styles */
+    html {
+        -webkit-text-size-adjust: 100%;
+        -moz-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
+
+    /* Prevent zoom on iOS input focus */
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+
+    /* Improve touch targets */
+    button,
+    a {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Better mobile scrolling */
+    body {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Mobile-optimized focus states */
+    *:focus {
+        outline: 2px solid #6366f1;
+        outline-offset: 2px;
+    }
+
+    /* Dark mode focus states */
+    .dark *:focus {
+        outline-color: #818cf8;
+    }
+}
+
 @layer components {
     /* Layout Components */
     .page-container {
-        @apply max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8;
+        @apply max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8;
     }
 
     .section-header {
-        @apply flex justify-between items-center mb-6;
+        @apply flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 space-y-2 sm:space-y-0;
     }
 
     .section-title {
-        @apply text-2xl font-bold text-gray-900 dark:text-gray-100;
+        @apply text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100;
     }
 
     .section-description {
@@ -35,7 +78,11 @@
 
     /* Card Components */
     .content-card {
-        @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-4 hover:shadow-md transition-shadow duration-200;
+        @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-4 sm:p-6 hover:shadow-md transition-shadow duration-200;
+    }
+
+    .mobile-card {
+        @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-3;
     }
 
     .offline-container {
@@ -43,20 +90,29 @@
     }
 
     .offline-card {
-        @apply max-w-md w-full space-y-8 p-10 bg-white dark:bg-gray-800 rounded-xl shadow-md;
+        @apply max-w-md w-full space-y-8 p-6 sm:p-10 bg-white dark:bg-gray-800 rounded-xl shadow-md;
     }
 
     /* Button Components */
     .primary-button {
-        @apply inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+        @apply inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full sm:w-auto;
     }
 
     .secondary-button {
-        @apply inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700;
+        @apply inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 w-full sm:w-auto;
     }
 
     .icon-button {
-        @apply p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-150 focus:outline-none;
+        @apply p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+    }
+
+    /* Mobile-specific button variants */
+    .mobile-button {
+        @apply inline-flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full;
+    }
+
+    .mobile-secondary-button {
+        @apply inline-flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-base font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 w-full;
     }
 
     /* Exercise Components */
@@ -74,6 +130,122 @@
 
     .warmup-text {
         @apply ml-2 text-yellow-600 dark:text-yellow-400;
+    }
+
+    /* Mobile-optimized grid layouts */
+    .mobile-grid {
+        @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6;
+    }
+
+    .mobile-form-grid {
+        @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
+    }
+
+    /* Mobile navigation */
+    .mobile-nav-item {
+        @apply flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700;
+    }
+
+    /* Mobile modal */
+    .mobile-modal {
+        @apply fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4;
+    }
+
+    .mobile-modal-content {
+        @apply bg-white dark:bg-gray-800 rounded-lg px-4 sm:px-6 py-6 mx-4 max-w-md w-full;
+    }
+
+    /* Mobile table alternative */
+    .mobile-table-card {
+        @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3;
+    }
+
+    /* Mobile-optimized spacing */
+    .mobile-spacing {
+        @apply space-y-3 sm:space-y-4;
+    }
+
+    .mobile-padding {
+        @apply p-4 sm:p-6;
+    }
+
+    /* Mobile text utilities */
+    .mobile-text-sm {
+        @apply text-xs sm:text-sm;
+    }
+
+    .mobile-text-base {
+        @apply text-sm sm:text-base;
+    }
+
+    .mobile-text-lg {
+        @apply text-base sm:text-lg;
+    }
+
+    .mobile-text-xl {
+        @apply text-lg sm:text-xl;
+    }
+
+    .mobile-text-2xl {
+        @apply text-xl sm:text-2xl;
+    }
+}
+
+@layer utilities {
+    /* Mobile-specific utilities */
+    .mobile-only {
+        @apply block sm:hidden;
+    }
+
+    .desktop-only {
+        @apply hidden sm:block;
+    }
+
+    .mobile-touch-target {
+        @apply min-h-[44px] min-w-[44px];
+    }
+
+    .mobile-scroll {
+        @apply -webkit-overflow-scrolling-touch;
+    }
+
+    /* Mobile-optimized line clamping */
+    .line-clamp-1 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+    }
+
+    .line-clamp-2 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .line-clamp-3 {
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+    }
+
+    /* Mobile-safe areas */
+    .safe-area-top {
+        padding-top: env(safe-area-inset-top);
+    }
+
+    .safe-area-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .safe-area-left {
+        padding-left: env(safe-area-inset-left);
+    }
+
+    .safe-area-right {
+        padding-right: env(safe-area-inset-right);
     }
 }
 
@@ -98,6 +270,7 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
+    z-index: 50;
 }
 
 .custom-tooltip-right::after {
@@ -113,6 +286,7 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
+    z-index: 50;
 }
 
 .custom-tooltip-right:hover::before,
@@ -121,7 +295,7 @@
     visibility: visible;
 }
 
-/* Dark mode support for left-facing tooltip */
+/* Dark mode support for right-facing tooltip */
 .dark .custom-tooltip-right::before {
     background-color: rgba(255, 255, 255, 0.9);
     color: black;
@@ -142,7 +316,7 @@
     left: 100%;
     top: 50%;
     transform: translateY(-50%);
-    margin-right: 10px;
+    margin-left: 10px;
     padding: 8px 12px;
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
@@ -152,6 +326,7 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
+    z-index: 50;
 }
 
 .custom-tooltip-left::after {
@@ -160,13 +335,14 @@
     left: 100%;
     top: 50%;
     transform: translateY(-50%);
-    margin-right: 2px;
+    margin-left: 2px;
     border-width: 6px;
     border-style: solid;
-    border-color: transparent transparent transparent rgba(0, 0, 0, 0.8);
+    border-color: transparent rgba(0, 0, 0, 0.8) transparent transparent;
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease;
+    z-index: 50;
 }
 
 .custom-tooltip-left:hover::before,
@@ -182,5 +358,75 @@
 }
 
 .dark .custom-tooltip-left::after {
-    border-color: transparent transparent transparent rgba(255, 255, 255, 0.9);
+    border-color: transparent rgba(255, 255, 255, 0.9) transparent transparent;
+}
+
+/* Mobile-optimized tooltips */
+@media (max-width: 640px) {
+    .custom-tooltip-right::before,
+    .custom-tooltip-left::before {
+        display: none;
+    }
+
+    .custom-tooltip-right::after,
+    .custom-tooltip-left::after {
+        display: none;
+    }
+}
+
+/* Mobile loading states */
+.mobile-loading {
+    @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
+}
+
+/* Mobile swipe gestures */
+.swipeable {
+    touch-action: pan-y;
+}
+
+/* Mobile-optimized focus rings */
+.focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800;
+}
+
+/* Mobile-optimized transitions */
+.mobile-transition {
+    @apply transition-all duration-200 ease-in-out;
+}
+
+/* Mobile-optimized shadows */
+.mobile-shadow {
+    @apply shadow-sm hover:shadow-md transition-shadow duration-200;
+}
+
+/* Mobile-optimized borders */
+.mobile-border {
+    @apply border border-gray-200 dark:border-gray-700;
+}
+
+/* Mobile-optimized rounded corners */
+.mobile-rounded {
+    @apply rounded-lg;
+}
+
+/* Mobile-optimized text truncation */
+.mobile-truncate {
+    @apply truncate;
+}
+
+/* Mobile-optimized flex layouts */
+.mobile-flex-col {
+    @apply flex flex-col sm:flex-row;
+}
+
+.mobile-flex-wrap {
+    @apply flex flex-wrap;
+}
+
+.mobile-flex-center {
+    @apply flex items-center justify-center;
+}
+
+.mobile-flex-between {
+    @apply flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0;
 }

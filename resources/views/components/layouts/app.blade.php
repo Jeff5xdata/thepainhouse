@@ -1,3 +1,5 @@
+@props(['title' => config('app.name', 'The Pain House')])
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full dark" x-data>
     <head>
@@ -14,7 +16,7 @@
             }
         </style>
 
-        <title>{{ config('app.name', 'Workout Tracker') }}</title>
+        <title>{{ $title }}</title>
 
         <!-- PWA -->
         @laravelPWA
@@ -68,9 +70,7 @@
                         <div class="flex items-center space-x-4">
                             <!-- Hamburger Menu Button -->
                             <div class="relative">
-                                <button @click="menuOpen = !menuOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 
-                                dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700 focus:text-gray-500 
-                                dark:focus:text-gray-400 transition duration-150 ease-in-out custom-tooltip-right" data-tooltip="Toggle navigation menu">
+                                <button @click="menuOpen = !menuOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-700 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
                                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                                         <path :class="{'hidden': menuOpen, 'inline-flex': !menuOpen }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                         <path :class="{'hidden': !menuOpen, 'inline-flex': menuOpen }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -108,6 +108,7 @@
                                         </svg>
                                         {{ __('Workout Planner') }}
                                     </a>
+
 
                                         <a href="{{ route('workout.plan', 0) }}" 
                                             class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
@@ -149,6 +150,16 @@
                                         {{ __('Workout Exercises') }}
                                     </a>
 
+                                    <a href="{{ route('nutrition') }}" 
+                                        class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                        @click="menuOpen = false"
+                                        wire:navigate>
+                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                                        </svg>
+                                        {{ __('Food Tracker') }}
+                                    </a>
+
                                     <a href="{{ route('workout.session') }}" 
                                         class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
                                         @click="menuOpen = false"
@@ -158,6 +169,48 @@
                                         </svg>
                                         {{ __('Start Workout') }}
                                     </a>
+
+                                    <!-- Trainer Request Link (for clients) -->
+                                    @if(!auth()->user()->isTrainer() && !auth()->user()->hasTrainer())
+                                        <a href="{{ route('trainer.request') }}" 
+                                            class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                            @click="menuOpen = false"
+                                            wire:navigate>
+                                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            {{ __('Request Trainer') }}
+                                        </a>
+                                    @endif
+
+                                    <!-- Messaging Center Link -->
+                                    <a href="{{ route('messaging.center') }}" 
+                                        class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                        @click="menuOpen = false"
+                                        wire:navigate>
+                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                        </svg>
+                                        {{ __('Messages') }}
+                                        @if(auth()->user()->unreadMessagesCount() > 0)
+                                            <span class="ml-auto inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                                {{ auth()->user()->unreadMessagesCount() }}
+                                            </span>
+                                        @endif
+                                    </a>
+
+                                    <!-- Trainer Dashboard Link (for trainers) -->
+                                    @if(auth()->user()->isTrainer())
+                                        <a href="{{ route('trainer.dashboard') }}" 
+                                            class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                            @click="menuOpen = false"
+                                            wire:navigate>
+                                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            {{ __('Trainer Dashboard') }}
+                                        </a>
+                                    @endif
                                 </div>
                             </div>
 
@@ -168,19 +221,6 @@
                                 </a>
                             </div>
                         </div>
-
-                        <!-- Right Side Items -->
-                        <div class="flex items-center space-x-4">
-                            <!-- Settings Link -->
-                            <a href="{{ route('workout.settings') }}" 
-                                class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 dark:focus:ring-offset-gray-800 rounded-md transition-colors duration-150 ease-in-out custom-tooltip-left"
-                                data-tooltip="Workout Settings"
-                                wire:navigate>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                            </a>
 
                         <!-- Right Side Items -->
                         <div class="flex items-center space-x-4">
@@ -227,10 +267,5 @@
                 {{ $slot }}
             </main>
         </div>
-
-        <script>
-            // Add this script to initialize the settings
-            const settings = @json(auth()->user()->workoutSettings);
-        </script>
     </body>
 </html>

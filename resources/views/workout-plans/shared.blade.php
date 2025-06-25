@@ -56,14 +56,24 @@
                                                 <div class="mb-4 last:mb-0">
                                                     <h5 class="text-md font-medium mb-2 text-gray-800 dark:text-gray-200 capitalize">{{ $day }}</h5>
                                                     <ul class="space-y-2">
-                                                        @foreach($scheduleItems as $item)
+                                                        @php
+                                                            $grouped = $scheduleItems->groupBy('exercise_id');
+                                                        @endphp
+                                                        @foreach($grouped as $exerciseId => $items)
+                                                            @php
+                                                                $exercise = $items->first()->exercise;
+                                                                $totalSets = $items->sum('sets');
+                                                                $totalReps = $items->sum('reps');
+                                                                $isTimeBased = $items->first()->is_time_based;
+                                                                $totalTime = $items->sum('time_in_seconds');
+                                                            @endphp
                                                             <li class="text-sm text-gray-600 dark:text-gray-300 flex justify-between items-center">
-                                                                <span>{{ $item->exercise->name }}</span>
+                                                                <span>{{ $exercise->name }}</span>
                                                                 <span class="text-gray-500 dark:text-gray-400 ml-2">
-                                                                    @if($item->is_time_based)
-                                                                        {{ $item->sets }}x{{ $item->time_in_seconds }}s
+                                                                    @if($isTimeBased)
+                                                                        {{ $totalSets }}x{{ $totalTime }}s
                                                                     @else
-                                                                        {{ $item->sets }}x{{ $item->reps }}
+                                                                        {{ $totalSets }}x{{ $totalReps }}
                                                                     @endif
                                                                 </span>
                                                             </li>
@@ -82,50 +92,63 @@
                     <div class="mb-8">
                         <h3 class="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">All Exercises</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            @foreach($workoutPlan->scheduleItems()->with('exercise')->distinct()->get() as $item)
+                            @php
+                                $allItems = $workoutPlan->scheduleItems()->with('exercise')->get();
+                                $groupedExercises = $allItems->groupBy('exercise_id');
+                            @endphp
+                            @foreach($groupedExercises as $exerciseId => $items)
+                                @php
+                                    $exercise = $items->first()->exercise;
+                                    $totalSets = $items->sum('sets');
+                                    $totalReps = $items->sum('reps');
+                                    $isTimeBased = $items->first()->is_time_based;
+                                    $totalTime = $items->sum('time_in_seconds');
+                                @endphp
                                 <!-- Exercise Card -->
                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden">
                                     <!-- Exercise Header -->
                                     <div class="bg-gray-100 dark:bg-gray-600 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
-                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">{{ $item->exercise->name }}</h4>
+                                        <h4 class="text-md font-medium text-gray-900 dark:text-gray-100">{{ $exercise->name }}</h4>
                                     </div>
                                     <!-- Exercise Content -->
                                     <div class="p-4">
                                         <div class="text-sm text-gray-600 dark:text-gray-300">
-                                            @if($item->is_time_based)
-                                                <p class="flex justify-between">
-                                                    <span>Sets:</span>
-                                                    <span class="text-gray-500 dark:text-gray-400">{{ $item->sets }}</span>
-                                                </p>
-                                                <p class="flex justify-between">
-                                                    <span>Time:</span>
-                                                    <span class="text-gray-500 dark:text-gray-400">{{ $item->time_in_seconds }} seconds</span>
-                                                </p>
-                                            @else
-                                                <p class="flex justify-between">
-                                                    <span>Sets:</span>
-                                                    <span class="text-gray-500 dark:text-gray-400">{{ $item->sets }}</span>
-                                                </p>
-                                                <p class="flex justify-between">
-                                                    <span>Reps:</span>
-                                                    <span class="text-gray-500 dark:text-gray-400">{{ $item->reps }}</span>
-                                                </p>
-                                            @endif
-                                            @if($item->has_warmup)
-                                                <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                                                    <p class="font-medium text-gray-700 dark:text-gray-200 mb-2">Warmup</p>
+
+                                            @if($items->first()->has_warmup)
+                                                <p class="font-medium text-gray-700 dark:text-gray-200 mb-2">Warmup</p>
                                                     <p class="flex justify-between">
                                                         <span>Sets x Reps:</span>
-                                                        <span class="text-gray-500 dark:text-gray-400">{{ $item->warmup_sets }}x{{ $item->warmup_reps }}</span>
+                                                        <span class="text-gray-500 dark:text-gray-400">{{ $items->first()->warmup_sets }}x{{ $items->first()->warmup_reps }}</span>
                                                     </p>
-                                                    @if($item->warmup_weight_percentage)
+                                                    @if($items->first()->warmup_weight_percentage)
                                                         <p class="flex justify-between">
                                                             <span>Weight:</span>
-                                                            <span class="text-gray-500 dark:text-gray-400">{{ $item->warmup_weight_percentage }}% of working weight</span>
+                                                            <span class="text-gray-500 dark:text-gray-400">{{ $items->first()->warmup_weight_percentage }}% of working weight</span>
                                                         </p>
                                                     @endif
-                                                </div>
                                             @endif
+                                            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                                <p class="font-medium text-gray-700 dark:text-gray-200 mb-2">Working Sets</p>
+                                                @if($isTimeBased)
+                                                    <p class="flex justify-between">
+                                                        <span>Sets:</span>
+                                                        <span class="text-gray-500 dark:text-gray-400">{{ $totalSets }}</span>
+                                                    </p>
+                                                    <p class="flex justify-between">
+                                                        <span>Time:</span>
+                                                        <span class="text-gray-500 dark:text-gray-400">{{ $totalTime }} seconds</span>
+                                                    </p>
+                                                @else
+                                                    <p class="flex justify-between">
+                                                        <span>Sets:</span>
+                                                        <span class="text-gray-500 dark:text-gray-400">{{ $totalSets }}</span>
+                                                    </p>
+                                                    <p class="flex justify-between">
+                                                        <span>Reps:</span>
+                                                        <span class="text-gray-500 dark:text-gray-400">{{ $totalReps }}</span>
+                                                    </p>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

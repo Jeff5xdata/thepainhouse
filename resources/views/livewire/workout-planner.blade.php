@@ -1,6 +1,6 @@
-<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 relative">
-        <h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">
+<div class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 relative">
+        <h2 class="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900 dark:text-gray-100">
             {{ $workoutPlan ? 'Edit Workout Plan' : 'Create Workout Plan' }}
         </h2>
 
@@ -10,7 +10,8 @@
             </div>
         @endif
 
-        <form wire:submit.prevent="save" class="space-y-6">
+        <form class="space-y-4 sm:space-y-6">
+            <input type="hidden" wire:model="schedule">
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Plan Name</label>
                 <input type="text" wire:model.live="name" id="name"
@@ -32,11 +33,11 @@
                 @error('weeks_duration') <span class="text-red-500 dark:text-red-400 text-xs">{{ $message }}</span> @enderror
             </div>
 
-            <div class="border dark:border-gray-700 rounded-lg p-4">
-                <div class="flex space-x-4 mb-4">
+            <div class="border dark:border-gray-700 rounded-lg p-3 sm:p-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Week</label>
-                        <div class="mb-6">
+                        <div class="mb-4 sm:mb-6">
                             <select wire:model.live="currentWeek" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 @for ($i = 1; $i <= $weeks_duration; $i++)
                                     <option value="{{ $i }}">Week {{ $i }}</option>
@@ -46,7 +47,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Day</label>
-                        <div class="mb-6">
+                        <div class="mb-4 sm:mb-6">
                             <select wire:model.live="currentDay" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 @foreach ($daysOfWeek as $day => $dayName)
                                     <option value="{{ $day }}">{{ $dayName }}</option>
@@ -57,41 +58,41 @@
                 </div>
 
                 <div>
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Exercises for Week {{ $currentWeek }}, {{ $daysOfWeek[$currentDay] }}</h3>
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-2 sm:space-y-0">
+                        <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">Exercises for Week {{ $currentWeek }}, {{ $daysOfWeek[$currentDay] }}</h3>
                     </div>
 
-                    <div class="border dark:border-gray-700 rounded-lg p-4">
+                    <div class="border dark:border-gray-700 rounded-lg p-3 sm:p-4">
                         @if (isset($schedule[$currentWeek][$currentDay]) && count($schedule[$currentWeek][$currentDay]) > 0)
-                            <div class="space-y-4">
+                            <div class="space-y-3 sm:space-y-4">
                                 @foreach ($schedule[$currentWeek][$currentDay] as $index => $exerciseData)
-                                    <div class="border dark:border-gray-700 rounded-lg p-4">
-                                        <div class="flex items-center justify-between">
-                                            <div>
-                                                <h4 class="font-medium text-gray-900 dark:text-gray-100">{{ $exercises->firstWhere('id', $exerciseData['exercise_id'])->name }}</h4>
-                                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    <div class="border dark:border-gray-700 rounded-lg p-3 sm:p-4">
+                                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ $exercises->firstWhere('id', $exerciseData['exercise_id'])->name }}</h4>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                                     {{ $categories[$exercises->firstWhere('id', $exerciseData['exercise_id'])->category] ?? $exercises->firstWhere('id', $exerciseData['exercise_id'])->category }}
                                                     @if($exercises->firstWhere('id', $exerciseData['exercise_id'])->equipment)
                                                         • {{ $exercises->firstWhere('id', $exerciseData['exercise_id'])->equipment }}
                                                     @endif
                                                 </p>
                                             </div>
-                                            <div class="flex items-center space-x-4">
+                                            <div class="flex items-center space-x-2 sm:space-x-4">
                                                 <button type="button" 
                                                     class="text-sm {{ $exerciseData['has_warmup'] ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500' }} hover:text-indigo-900 dark:hover:text-indigo-300 custom-tooltip-right"
                                                     data-tooltip="Add warmup sets to this exercise"
                                                     wire:click="toggleWarmup({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})">
                                                     <span class="flex items-center">
-                                                        <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <svg class="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                                         </svg>
-                                                        Warmup
+                                                        <span class="hidden sm:inline">Warmup</span>
                                                     </span>
                                                 </button>
                                                 <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 custom-tooltip-right"
                                                     data-tooltip="Remove this exercise"
                                                     wire:click="removeExercise({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})">
-                                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                             d="M6 18L18 6M6 6l12 12" />
                                                     </svg>
@@ -101,25 +102,42 @@
                                         @if($exerciseData['has_warmup'])
                                         <div class="mt-2 p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md">
                                             <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Warmup Sets</h5>
-                                            <div class="grid grid-cols-3 gap-4">
+                                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                                                <div>
+                                                    <label class="text-xs text-gray-500 dark:text-gray-400">Warmup Sets</label>
+                                                    <div class="flex items-center space-x-2 mt-1">
+                                                        <button type="button" 
+                                                            wire:click="removeWarmupSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                            class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                                                            {{ ($exerciseData['warmup_sets'] ?? 2) <= 1 ? 'disabled' : '' }}>
+                                                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                                            </svg>
+                                                        </button>
+                                                        <span class="text-sm font-medium text-gray-900 dark:text-gray-100 min-w-[2rem] text-center">
+                                                            {{ $exerciseData['warmup_sets'] ?? 2 }}
+                                                        </span>
+                                                        <button type="button" 
+                                                            wire:click="addWarmupSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                            class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                                                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                                 @if(!$exerciseData['is_time_based'])
                                                 <div>
-                                                    <label class="text-xs text-gray-500 dark:text-gray-400">Sets</label>
-                                                    <input type="number" min="1" max="5"
-                                                        wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.warmup_sets"
-                                                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                                </div>
-                                                <div>
-                                                    <label class="text-xs text-gray-500 dark:text-gray-400">Reps</label>
+                                                    <label class="text-xs text-gray-500 dark:text-gray-400">Warmup Reps</label>
                                                     <input type="number" min="1" max="30"
                                                         wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.warmup_reps"
                                                         class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                 </div>
                                                 @else
                                                 <div>
-                                                    <label class="text-xs text-gray-500 dark:text-gray-400">Time (seconds)</label>
+                                                    <label class="text-xs text-gray-500 dark:text-gray-400">Warmup Time (seconds)</label>
                                                     <input type="number" min="1" max="3600"
-                                                        wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.warmup_time"
+                                                        wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.warmup_time_in_seconds"
                                                         class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                                 </div>
                                                 @endif
@@ -132,7 +150,7 @@
                                             </div>
                                         </div>
                                         @endif
-                                        <div class="mt-4 space-y-4">
+                                        <div class="mt-4 space-y-3 sm:space-y-4">
                                             <div class="flex items-center">
                                                 <button type="button" wire:click="toggleTimeBased({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
                                                     class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
@@ -143,30 +161,99 @@
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                                                         @endif
                                                     </svg>
-                                                    {{ $exerciseData['is_time_based'] ? 'Switch to Sets/Reps' : 'Switch to Time' }}
+                                                    <span class="hidden sm:inline">{{ $exerciseData['is_time_based'] ? 'Switch to Sets/Reps' : 'Switch to Time' }}</span>
+                                                    <span class="sm:hidden">{{ $exerciseData['is_time_based'] ? 'Sets/Reps' : 'Time' }}</span>
                                                 </button>
                                             </div>
+                                            
                                             @if($exerciseData['is_time_based'])
                                             <div>
                                                 <label class="text-xs text-gray-500 dark:text-gray-400">Time (seconds)</label>
                                                 <input type="number" min="1" max="3600"
-                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.time"
-                                                    class="mt-1 block w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.time_in_seconds"
+                                                    class="mt-1 block w-full sm:w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                             </div>
                                             @else
-                                            <div class="flex space-x-4">
-                                                <div>
-                                                    <label class="text-xs text-gray-500 dark:text-gray-400">Working Sets</label>
-                                                    <input type="number" min="1" max="10"
-                                                        wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.sets"
-                                                        class="mt-1 block w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <div class="space-y-3 sm:space-y-4">
+                                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                                                    <div>
+                                                        <label class="text-xs text-gray-500 dark:text-gray-400">Working Sets</label>
+                                                        <div class="flex items-center space-x-2 mt-1">
+                                                            <button type="button" 
+                                                                wire:click="removeSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                                class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                                                                {{ ($exerciseData['sets'] ?? 1) <= 1 ? 'disabled' : '' }}>
+                                                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                                                </svg>
+                                                            </button>
+                                                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100 min-w-[2rem] text-center">
+                                                                {{ $exerciseData['sets'] ?? 1 }}
+                                                            </span>
+                                                            <button type="button" 
+                                                                wire:click="addSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                                class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                                                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-xs text-gray-500 dark:text-gray-400">Default Reps</label>
+                                                        <input type="number" min="1" max="100"
+                                                            wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.reps"
+                                                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-xs text-gray-500 dark:text-gray-400">Default Weight</label>
+                                                        <input type="number" min="0" step="0.5"
+                                                            wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.weight"
+                                                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <label class="text-xs text-gray-500 dark:text-gray-400">Working Reps</label>
-                                                    <input type="number" min="1" max="100"
-                                                        wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.reps"
-                                                        class="mt-1 block w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                
+                                                <!-- Individual Sets Display -->
+                                                @if(isset($exerciseData['set_details']) && count($exerciseData['set_details']) > 0)
+                                                <div class="mt-4">
+                                                    <h6 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Individual Sets</h6>
+                                                    <div class="space-y-2">
+                                                        @foreach($exerciseData['set_details'] as $setIndex => $set)
+                                                        <div class="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                                                            <span class="text-xs text-gray-500 dark:text-gray-400 w-8">
+                                                                Set {{ $set['set_number'] }}
+                                                                @if($set['is_warmup'])
+                                                                    <span class="text-orange-500">(W)</span>
+                                                                @endif
+                                                            </span>
+                                                            @if($exerciseData['is_time_based'])
+                                                            <div class="flex-1">
+                                                                <input type="number" min="1" max="3600"
+                                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.time_in_seconds"
+                                                                    class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
+                                                                    placeholder="Time">
+                                                            </div>
+                                                            @else
+                                                            <div class="flex-1 flex space-x-2">
+                                                                <input type="number" min="1" max="100"
+                                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.reps"
+                                                                    class="w-16 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
+                                                                    placeholder="Reps">
+                                                                <input type="number" min="0" step="0.5"
+                                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.weight"
+                                                                    class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
+                                                                    placeholder="Weight">
+                                                            </div>
+                                                            @endif
+                                                            <input type="text"
+                                                                wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.notes"
+                                                                class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
+                                                                placeholder="Notes">
+                                                        </div>
+                                                        @endforeach
+                                                    </div>
                                                 </div>
+                                                @endif
                                             </div>
                                             @endif
                                         </div>
@@ -203,7 +290,7 @@
                     <div class="flex justify-end">
                         <button 
                             type="button"
-                            wire:click="confirmSave"
+                            wire:click="{{ $workoutPlan ? 'confirmSave' : 'save' }}"
                             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
                             wire:loading.class="opacity-50"
                             wire:loading.attr="disabled"

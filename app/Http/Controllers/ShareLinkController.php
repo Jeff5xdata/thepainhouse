@@ -53,13 +53,6 @@ class ShareLinkController extends Controller
     public function shareEmails(Request $request, WorkoutPlan $workoutPlan)
     {
         try {
-            \Log::info('Starting workout plan share process', [
-                'workout_plan_id' => $workoutPlan->id,
-                'workout_plan_name' => $workoutPlan->name,
-                'user_id' => auth()->id(),
-                'email_count' => count($request->emails)
-            ]);
-
             $request->validate([
                 'emails' => 'required|array|max:5',
                 'emails.*' => 'required|email|max:255',
@@ -75,26 +68,33 @@ class ShareLinkController extends Controller
                 'share_link.url' => 'Invalid share link format.'
             ]);
 
-            // Find the share link by URL
-            $token = basename($request->share_link);
+            // Extract and validate token from URL
+            $url = $request->share_link;
+            $token = null;
+            
+            // Try to extract token from the URL path
+            if (preg_match('/\/shared\/workout-plans\/([a-zA-Z0-9]{32})$/', $url, $matches)) {
+                $token = $matches[1];
+            } else {
+                // Fallback to basename if regex doesn't match
+                $token = basename($url);
+            }
+            
+            // Validate token format (should be 32 characters)
+            if (!preg_match('/^[a-zA-Z0-9]{32}$/', $token)) {
+                throw new \Exception('Invalid share link format.');
+            }
+
             $shareLink = ShareLink::where('token', $token)
                 ->where('workout_plan_id', $workoutPlan->id)
+                ->where('user_id', auth()->id())
+                ->where('expires_at', '>', now())
                 ->firstOrFail();
 
             $failedEmails = [];
             foreach ($request->emails as $email) {
                 try {
-                    \Log::info('Attempting to send share email', [
-                        'share_link_id' => $shareLink->id,
-                        'email' => $email
-                    ]);
-
                     Mail::to($email)->queue(new WorkoutPlanShared($shareLink));
-
-                    \Log::info('Share email queued successfully', [
-                        'share_link_id' => $shareLink->id,
-                        'email' => $email
-                    ]);
                 } catch (\Exception $e) {
                     $failedEmails[] = $email;
                     \Log::error("Failed to send email to {$email}", [
@@ -109,12 +109,6 @@ class ShareLinkController extends Controller
             if (!empty($failedEmails)) {
                 throw new \Exception("Failed to send emails to: " . implode(', ', $failedEmails));
             }
-
-            \Log::info('Workout plan share process completed successfully', [
-                'share_link_id' => $shareLink->id,
-                'workout_plan_id' => $workoutPlan->id,
-                'email_count' => count($request->emails)
-            ]);
 
             return response()->json([
                 'message' => 'Emails sent successfully'

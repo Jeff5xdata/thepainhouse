@@ -20,6 +20,15 @@ class WorkoutHistory extends Component
     public $selectedPlan = '';
     public $sortField = 'created_at';
     public $sortDirection = 'desc';
+    public $selectedDate = null;
+
+    public function mount($date = null)
+    {
+        if ($date) {
+            $this->selectedDate = $date;
+            $this->dateRange = 'custom';
+        }
+    }
 
     public function updatingSearch()
     {
@@ -28,6 +37,9 @@ class WorkoutHistory extends Component
 
     public function updatingDateRange()
     {
+        if ($this->dateRange !== 'custom') {
+            $this->selectedDate = null;
+        }
         $this->resetPage();
     }
 
@@ -48,6 +60,10 @@ class WorkoutHistory extends Component
 
     protected function getDateRangeFilter()
     {
+        if ($this->dateRange === 'custom' && $this->selectedDate) {
+            return Carbon::parse($this->selectedDate)->startOfDay();
+        }
+
         return match($this->dateRange) {
             'today' => Carbon::today(),
             'week' => Carbon::now()->subWeek(),
@@ -71,10 +87,14 @@ class WorkoutHistory extends Component
         }
 
         if ($dateFrom = $this->getDateRangeFilter()) {
-            $query->where(function($q) use ($dateFrom) {
-                $q->where('created_at', '>=', $dateFrom)
-                  ->orWhere('completed_at', '>=', $dateFrom);
-            });
+            if ($this->dateRange === 'custom') {
+                $query->whereDate('date', $dateFrom);
+            } else {
+                $query->where(function($q) use ($dateFrom) {
+                    $q->where('created_at', '>=', $dateFrom)
+                      ->orWhere('completed_at', '>=', $dateFrom);
+                });
+            }
         }
 
         if ($this->selectedPlan) {

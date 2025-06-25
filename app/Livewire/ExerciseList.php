@@ -6,7 +6,10 @@ use App\Models\Exercise;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Layout;
+use Illuminate\Support\Facades\Auth;
 
+#[Layout('components.layouts.app')]
 class ExerciseList extends Component
 {
     use WithPagination;
@@ -16,6 +19,13 @@ class ExerciseList extends Component
     public $exerciseToDelete = null;
     public $exerciseToEdit = null;
     public $search = '';
+    public $category = '';
+    public $equipment = '';
+    public $editingExercise = null;
+    public $editingName = '';
+    public $editingDescription = '';
+    public $editingCategory = '';
+    public $editingEquipment = '';
 
     // Edit form properties
     public $editForm = [
@@ -27,6 +37,13 @@ class ExerciseList extends Component
 
     protected $listeners = ['exerciseCreated' => '$refresh'];
 
+    protected $rules = [
+        'editingName' => 'required|string|max:255',
+        'editingDescription' => 'nullable|string',
+        'editingCategory' => 'nullable|string|max:100',
+        'editingEquipment' => 'nullable|string|max:100',
+    ];
+
     public function updatingSearch()
     {
         $this->resetPage();
@@ -34,103 +51,139 @@ class ExerciseList extends Component
 
     public function confirmDelete($exerciseId)
     {
-        if (auth()->id() !== 1) {
+        if (!Auth::user()->can('delete', Exercise::class)) {
             session()->flash('error', 'You are not authorized to delete exercises.');
             return;
         }
 
-        $this->exerciseToDelete = Exercise::find($exerciseId);
-        $this->showDeleteModal = true;
+        try {
+            $exercise = Exercise::findOrFail($exerciseId);
+            
+            if (!Auth::user()->can('delete', $exercise)) {
+                session()->flash('error', 'You are not authorized to delete exercises.');
+                return;
+            }
+
+            $this->exerciseToDelete = $exercise;
+            $this->showDeleteModal = true;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to find exercise: ' . $e->getMessage());
+        }
     }
 
     public function deleteExercise()
     {
-        if (auth()->id() !== 1) {
+        if (!Auth::user()->can('delete', Exercise::class)) {
             session()->flash('error', 'You are not authorized to delete exercises.');
             return;
         }
 
         if ($this->exerciseToDelete) {
-            $this->exerciseToDelete->delete();
-            $this->showDeleteModal = false;
-            $this->exerciseToDelete = null;
-            session()->flash('message', 'Exercise deleted successfully.');
+            try {
+                if (!Auth::user()->can('delete', $this->exerciseToDelete)) {
+                    session()->flash('error', 'You are not authorized to delete exercises.');
+                    return;
+                }
+
+                $this->exerciseToDelete->delete();
+                $this->showDeleteModal = false;
+                $this->exerciseToDelete = null;
+                session()->flash('message', 'Exercise deleted successfully.');
+            } catch (\Exception $e) {
+                session()->flash('error', 'Failed to delete exercise: ' . $e->getMessage());
+            }
         }
     }
 
     public function editExercise($exerciseId)
     {
-        if (auth()->id() !== 1) {
+        if (!Auth::user()->can('update', Exercise::class)) {
             session()->flash('error', 'You are not authorized to edit exercises.');
             return;
         }
 
-        $this->exerciseToEdit = Exercise::find($exerciseId);
-        if ($this->exerciseToEdit) {
-            $this->editForm = [
-                'name' => $this->exerciseToEdit->name,
-                'description' => $this->exerciseToEdit->description,
-                'category' => $this->exerciseToEdit->category,
-                'equipment' => $this->exerciseToEdit->equipment
-            ];
+        try {
+            $exercise = Exercise::findOrFail($exerciseId);
+            
+            if (!Auth::user()->can('update', $exercise)) {
+                session()->flash('error', 'You are not authorized to edit exercises.');
+                return;
+            }
+
+            $this->editingExercise = $exercise;
+            $this->editingName = $exercise->name;
+            $this->editingDescription = $exercise->description;
+            $this->editingCategory = $exercise->category;
+            $this->editingEquipment = $exercise->equipment;
             $this->showEditModal = true;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Exercise not found.');
         }
     }
 
     public function updateExercise()
     {
-        if (auth()->id() !== 1) {
+        if (!Auth::user()->can('update', Exercise::class)) {
             session()->flash('error', 'You are not authorized to edit exercises.');
             return;
         }
 
-        $this->validate([
-            'editForm.name' => 'required|string|max:255',
-            'editForm.description' => 'nullable|string',
-            'editForm.category' => 'required|string|max:50',
-            'editForm.equipment' => 'nullable|string|max:255'
-        ]);
+        $this->validate();
 
-        if ($this->exerciseToEdit) {
-            $this->exerciseToEdit->update([
-                'name' => $this->editForm['name'],
-                'description' => $this->editForm['description'],
-                'category' => $this->editForm['category'],
-                'equipment' => $this->editForm['equipment']
+        try {
+            if (!$this->editingExercise || !Auth::user()->can('update', $this->editingExercise)) {
+                session()->flash('error', 'You are not authorized to edit exercises.');
+                return;
+            }
+
+            $this->editingExercise->update([
+                'name' => $this->editingName,
+                'description' => $this->editingDescription,
+                'category' => $this->editingCategory,
+                'equipment' => $this->editingEquipment,
             ]);
 
             $this->showEditModal = false;
-            $this->exerciseToEdit = null;
-            $this->editForm = [
-                'name' => '',
-                'description' => '',
-                'category' => '',
-                'equipment' => ''
-            ];
+            $this->editingExercise = null;
+            $this->reset(['editingName', 'editingDescription', 'editingCategory', 'editingEquipment']);
             session()->flash('message', 'Exercise updated successfully.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to update exercise: ' . $e->getMessage());
         }
+    }
+
+    public function cancelEdit()
+    {
+        $this->editingExercise = null;
+        $this->reset(['editingName', 'editingDescription', 'editingCategory', 'editingEquipment']);
     }
 
     public function render()
     {
-        $exercises = Exercise::where('name', 'like', '%' . $this->search . '%')
-            ->orWhere('category', 'like', '%' . $this->search . '%')
-            ->orderBy('name')
-            ->paginate(10);
+        $query = Exercise::query();
+
+        if ($this->search) {
+            $query->where('name', 'like', '%' . $this->search . '%')
+                  ->orWhere('description', 'like', '%' . $this->search . '%');
+        }
+
+        if ($this->category) {
+            $query->where('category', $this->category);
+        }
+
+        if ($this->equipment) {
+            $query->where('equipment', $this->equipment);
+        }
+
+        $exercises = $query->orderBy('name')->paginate(20);
+
+        $categories = Exercise::distinct()->pluck('category')->filter()->sort()->values();
+        $equipment = Exercise::distinct()->pluck('equipment')->filter()->sort()->values();
 
         return view('livewire.exercise-list', [
             'exercises' => $exercises,
-            'categories' => [
-                'chest' => 'Chest',
-                'back' => 'Back',
-                'legs' => 'Legs',
-                'shoulders' => 'Shoulders',
-                'arms' => 'Arms',
-                'core' => 'Core',
-                'cardio' => 'Cardio',
-                'other' => 'Other',
-            ],
-            'canManageExercises' => auth()->id() === 1,
+            'categories' => $categories,
+            'equipment' => $equipment,
         ]);
     }
 } 

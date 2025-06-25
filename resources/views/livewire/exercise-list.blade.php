@@ -1,4 +1,4 @@
-<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+<div class="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
     <!-- Success Message -->
     @if (session()->has('message'))
         <div class="bg-green-100 dark:bg-green-900/20 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-300 px-4 py-3 rounded relative mb-4">
@@ -7,21 +7,65 @@
     @endif
 
     <!-- Search and Add New -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6 space-y-3 sm:space-y-0">
         <div class="flex-1 max-w-sm">
             <input type="text" wire:model.live="search" placeholder="Search exercises..."
                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
         </div>
-        @if($canManageExercises)
+        @if(auth()->user()->can('create', \App\Models\Exercise::class))
         <a href="{{ route('exercises.create') }}" 
-            class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 w-full sm:w-auto">
             Add New Exercise
         </a>
         @endif
     </div>
 
-    <!-- Exercises Table -->
-    <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
+    <!-- Mobile Card View -->
+    <div class="sm:hidden">
+        <div class="space-y-3">
+            @forelse ($exercises as $exercise)
+                <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg p-4">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ $exercise->name }}</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ $categories[$exercise->category] ?? $exercise->category }}</p>
+                            @if($exercise->equipment)
+                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $exercise->equipment }}</p>
+                            @endif
+                            @if($exercise->description)
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ $exercise->description }}</p>
+                            @endif
+                        </div>
+                        <div class="flex items-center space-x-2 ml-3">
+                            @if(auth()->user()->can('update', $exercise) || auth()->user()->can('delete', $exercise))
+                                @if(auth()->user()->can('update', $exercise))
+                                <button wire:click="editExercise({{ $exercise->id }})" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 p-1">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+                                @endif
+                                @if(auth()->user()->can('delete', $exercise))
+                                <button wire:click="confirmDelete({{ $exercise->id }})" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                                @endif
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @empty
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    No exercises found.
+                </div>
+            @endforelse
+        </div>
+    </div>
+
+    <!-- Desktop Table View -->
+    <div class="hidden sm:block bg-white dark:bg-gray-800 shadow-sm rounded-lg overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -42,9 +86,13 @@
                             <div class="max-w-xs truncate">{{ $exercise->description }}</div>
                         </td>
                         <td class="px-6 py-4 flex justify-center whitespace-nowrap text-sm font-medium">
-                            @if($canManageExercises)
-                            <button wire:click="editExercise({{ $exercise->id }})" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-2">Edit</button>
-                            <button wire:click="confirmDelete({{ $exercise->id }})" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Delete</button>
+                            @if(auth()->user()->can('update', $exercise) || auth()->user()->can('delete', $exercise))
+                                @if(auth()->user()->can('update', $exercise))
+                                <button wire:click="editExercise({{ $exercise->id }})" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-2">Edit</button>
+                                @endif
+                                @if(auth()->user()->can('delete', $exercise))
+                                <button wire:click="confirmDelete({{ $exercise->id }})" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">Delete</button>
+                                @endif
                             @endif
                         </td>
                     </tr>
@@ -58,7 +106,7 @@
     </div>
 
     <!-- Pagination -->
-    <div class="mt-4">
+    <div class="mt-4 sm:mt-6">
         {{ $exercises->links() }}
     </div>
 

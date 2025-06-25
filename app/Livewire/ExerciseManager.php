@@ -84,6 +84,7 @@ class ExerciseManager extends Component
             'description' => $this->description,
             'category' => $this->category,
             'equipment' => $this->equipment,
+            'user_id' => auth()->id(),
         ]);
 
         $this->reset(['name', 'description', 'category', 'equipment']);

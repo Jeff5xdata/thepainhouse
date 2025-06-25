@@ -8,10 +8,14 @@ use Livewire\Attributes\Rule;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\Auth;
 
 #[Layout('components.layouts.app')]
 class ExerciseForm extends Component
 {
+    use WithFileUploads;
+
     #[Rule('required|string|max:255')]
     public $name = '';
 
@@ -27,11 +31,18 @@ class ExerciseForm extends Component
     public $exerciseId = null;
     public $isEditing = false;
 
+    protected $rules = [
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'category' => 'nullable|string|max:100',
+        'equipment' => 'nullable|string|max:100',
+    ];
+
     public function mount($exerciseId = null)
     {
-        if (auth()->id() !== 1) {
+        if (!Auth::user()->can('manage', Exercise::class)) {
             session()->flash('error', 'You are not authorized to manage exercises.');
-            return redirect()->route('exercises.index');
+            return;
         }
 
         if ($exerciseId) {
@@ -42,7 +53,7 @@ class ExerciseForm extends Component
 
     public function loadExercise()
     {
-        if (auth()->id() !== 1) {
+        if (!Auth::user()->can('manage', Exercise::class)) {
             session()->flash('error', 'You are not authorized to edit exercises.');
             return redirect()->route('exercises.index');
         }
@@ -64,39 +75,46 @@ class ExerciseForm extends Component
 
     public function save()
     {
-        if (auth()->id() !== 1) {
+        if (!Auth::user()->can('manage', Exercise::class)) {
             session()->flash('error', 'You are not authorized to manage exercises.');
-            return redirect()->route('exercises.index');
+            return;
         }
 
-        try {
-            $validated = $this->validate([
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'category' => 'required|string|max:50',
-                'equipment' => 'nullable|string|max:255'
-            ]);
+        $this->validate();
 
+        try {
             if ($this->isEditing) {
-                $exercise = Exercise::find($this->exerciseId);
-                if (!$exercise) {
-                    session()->flash('error', 'Exercise not found for editing');
+                if (!Auth::user()->can('update', $this->exercise)) {
+                    session()->flash('error', 'You are not authorized to edit exercises.');
                     return;
                 }
 
-                $exercise->update($validated);
+                $this->exercise->update([
+                    'name' => $this->name,
+                    'description' => $this->description,
+                    'category' => $this->category,
+                    'equipment' => $this->equipment,
+                ]);
+
                 session()->flash('message', 'Exercise updated successfully!');
             } else {
-                $exercise = Exercise::create($validated);
+                if (!Auth::user()->can('create', Exercise::class)) {
+                    session()->flash('error', 'You are not authorized to manage exercises.');
+                    return;
+                }
+
+                Exercise::create([
+                    'name' => $this->name,
+                    'description' => $this->description,
+                    'category' => $this->category,
+                    'equipment' => $this->equipment,
+                    'user_id' => auth()->id(),
+                ]);
+
                 session()->flash('message', 'Exercise created successfully!');
             }
 
-            // Reset form fields
-            $this->reset(['name', 'description', 'category', 'equipment']);
-            
-            // Redirect to the exercises list
-            return redirect()->route('exercises.index');
-
+            $this->redirect(route('workout.exercises'));
         } catch (\Exception $e) {
             session()->flash('error', 'Error: ' . $e->getMessage());
             Log::error('Error saving exercise: ' . $e->getMessage());

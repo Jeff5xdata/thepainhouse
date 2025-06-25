@@ -18,6 +18,7 @@ class ExerciseSet extends Model
         'reps',
         'is_warmup',
         'completed',
+        'notes',
     ];
 
     protected $casts = [
@@ -30,7 +31,6 @@ class ExerciseSet extends Model
     protected $attributes = [
         'completed' => false,
         'is_warmup' => false,
-        'used_progression' => false,
     ];
 
     public function workoutSession()

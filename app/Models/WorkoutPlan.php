@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class WorkoutPlan extends Model
 {
@@ -30,11 +31,6 @@ class WorkoutPlan extends Model
     public function workoutSessions(): HasMany
     {
         return $this->hasMany(WorkoutSession::class);
-    }
-
-    public function workoutSchedules(): HasMany
-    {
-        return $this->hasMany(WorkoutSchedule::class);
     }
 
     public function scheduleItems(): HasMany
@@ -77,6 +73,43 @@ class WorkoutPlan extends Model
             return $this->scheduleItems()
                 ->where('week_number', $week)
                 ->where('day_of_week', $day)
+                ->select(
+                    'exercise_id',
+                    'workout_plan_id',
+                    'week_number',
+                    'day_of_week',
+                    'has_warmup',
+                    'warmup_sets',
+                    'warmup_reps',
+                    'warmup_weight_percentage',
+                    'sets',
+                    'reps',
+                    'time_in_seconds',
+                    'is_time_based',
+                    DB::raw('MIN(id) as id'),
+                    DB::raw('MIN(order_in_day) as order_in_day'),
+                    DB::raw('MIN(weight) as weight'),
+                    DB::raw('MIN(notes) as notes'),
+                    DB::raw('MIN(warmup_weight) as warmup_weight'),
+                    DB::raw('MIN(warmup_notes) as warmup_notes'),
+                    DB::raw('MIN(warmup_time_in_seconds) as warmup_time_in_seconds'),
+                    DB::raw('MIN(created_at) as created_at'),
+                    DB::raw('MIN(updated_at) as updated_at')
+                )
+                ->groupBy(
+                    'exercise_id',
+                    'workout_plan_id',
+                    'week_number',
+                    'day_of_week',
+                    'has_warmup',
+                    'warmup_sets',
+                    'warmup_reps',
+                    'warmup_weight_percentage',
+                    'sets',
+                    'reps',
+                    'time_in_seconds',
+                    'is_time_based'
+                )
                 ->orderBy('order_in_day')
                 ->with('exercise')
                 ->get();

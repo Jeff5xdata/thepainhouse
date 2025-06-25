@@ -31,9 +31,10 @@ class WorkoutSessionDetails extends Component
                     'exercise' => $exercise,
                     'warmup_sets' => $sets->where('is_warmup', true)->values(),
                     'working_sets' => $workingSets->values(),
-                    'max_weight' => $workingSets->max('weight'),
-                    'total_reps' => $workingSets->sum('reps'),
-                    'total_volume' => $workingSets->sum(function($set) {
+                    'max_weight' => $workingSets->whereNull('time_in_seconds')->max('weight'),
+                    'total_reps' => $workingSets->whereNull('time_in_seconds')->sum('reps'),
+                    'total_time' => $workingSets->whereNotNull('time_in_seconds')->sum('time_in_seconds'),
+                    'total_volume' => $workingSets->whereNull('time_in_seconds')->sum(function($set) {
                         return $set->weight * $set->reps;
                     }),
                 ];
@@ -42,9 +43,10 @@ class WorkoutSessionDetails extends Component
         // Calculate session totals
         $this->totalExercises = $this->exerciseGroups->count();
         $this->totalSets = $this->session->exerciseSets->where('is_warmup', false)->count();
-        $this->totalReps = $this->session->exerciseSets->where('is_warmup', false)->sum('reps');
+        $this->totalReps = $this->session->exerciseSets->where('is_warmup', false)->whereNull('time_in_seconds')->sum('reps');
         $this->totalVolume = $this->session->exerciseSets
             ->where('is_warmup', false)
+            ->whereNull('time_in_seconds')
             ->sum(function($set) {
                 return $set->weight * $set->reps;
             });

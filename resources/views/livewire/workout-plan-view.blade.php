@@ -68,7 +68,7 @@
                                 </div>
                                 <hr class="dark:border-gray-700" />
                                 <div class="mt-4 space-y-4">
-                                    @foreach($weekSchedule[$day] as $scheduleItem)
+                                    @foreach(collect($weekSchedule[$day])->unique(fn($item) => $item->exercise->id) as $scheduleItem)
                                         <div class="content-card" wire:key="exercise-{{ $scheduleItem->id }}">
                                             <div class="flex justify-between items-start">
                                                 <div class="flex items-center">

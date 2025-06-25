@@ -56,14 +56,28 @@ class Dashboard extends Component
             ->take(5)
             ->get();
 
+        // Calculate total weight lifted using proper Eloquent methods
+        $totalWeight = WorkoutSession::where('user_id', auth()->id())
+            ->with('exerciseSets')
+            ->get()
+            ->sum(function ($session) {
+                return $session->exerciseSets
+                    ->where('is_warmup', false) // Only count working sets
+                    ->sum(function ($set) {
+                        // Only count sets with valid weight and reps
+                        if ($set->weight && $set->reps && $set->weight > 0 && $set->reps > 0) {
+                            return $set->weight * $set->reps;
+                        }
+                        return 0;
+                    });
+            });
+
         return view('livewire.dashboard', [
             'recentSessions' => $recentSessions->take(5), // Only pass 5 for display
             'workoutPlans' => $workoutPlans,
             'activeStreak' => $this->calculateStreak($recentSessions),
             'totalWorkouts' => WorkoutSession::where('user_id', auth()->id())->count(),
-            'totalWeight' => WorkoutSession::where('user_id', auth()->id())
-                ->join('exercise_sets', 'workout_sessions.id', '=', 'exercise_sets.workout_session_id')
-                ->sum(\DB::raw('exercise_sets.set_number * exercise_sets.reps * exercise_sets.weight')),
+            'totalWeight' => $totalWeight,
         ]);
     }
 } 

@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'chomp' => [
+        'api_key' => env('CHOMP_API_KEY'),
+        'api_user' => env('CHOMP_API_USER'),
+    ],
+
 ];
