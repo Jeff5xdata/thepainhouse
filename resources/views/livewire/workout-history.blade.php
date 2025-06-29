@@ -56,7 +56,7 @@
                                                 {{ $session->workoutPlan->name }}
                                             </h3>
                                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                {{ $session->completed_at ? $session->completed_at->format('F j, Y g:i A') : $session->created_at->format('F j, Y g:i A') }}
+                                                {{ $session->completed_at ? $session->completed_at->format('F j, Y g:i A') : ($session->date ? $session->date->format('F j, Y g:i A') : 'Date not set') }}
                                             </p>
                                         </div>
                                         <div class="text-right">
@@ -189,7 +189,7 @@
                             @forelse($sessions as $session)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $session->completed_at ? $session->completed_at->format('F j, Y g:i A') : $session->created_at->format('F j, Y g:i A') }}
+                                        {{ $session->completed_at ? $session->completed_at->format('F j, Y g:i A') : ($session->date ? $session->date->format('F j, Y g:i A') : 'Date not set') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                         {{ $session->workoutPlan->name }}

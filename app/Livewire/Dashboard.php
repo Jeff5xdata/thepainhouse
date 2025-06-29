@@ -21,7 +21,17 @@ class Dashboard extends Component
 
         $streak = 0;
         $today = Carbon::today();
-        $lastWorkout = $sessions->first()->created_at->startOfDay();
+        
+        // Filter out sessions without a valid date
+        $validSessions = $sessions->filter(function($session) {
+            return $session->date !== null;
+        });
+        
+        if ($validSessions->isEmpty()) {
+            return 0;
+        }
+        
+        $lastWorkout = $validSessions->first()->date->startOfDay();
 
         // If no workout today or yesterday, streak is 0
         if ($lastWorkout->lt($today->copy()->subDay())) {
@@ -29,8 +39,8 @@ class Dashboard extends Component
         }
 
         // Count consecutive days
-        foreach ($sessions as $session) {
-            $sessionDate = $session->created_at->startOfDay();
+        foreach ($validSessions as $session) {
+            $sessionDate = $session->date->startOfDay();
             
             if ($lastWorkout->diffInDays($sessionDate) <= 1) {
                 $streak++;

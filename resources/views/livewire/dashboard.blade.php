@@ -96,7 +96,7 @@
                                             <div class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ $plan->description }}</div>
                                         @endif
                                         <div class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                            Created {{ $plan->created_at->format('F j, Y') }}
+                                            Created {{ $plan->created_at ? $plan->created_at->format('F j, Y') : 'Date not set' }}
                                         </div>
                                     </div>
 
@@ -139,7 +139,7 @@
                                         <h4 class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ $session->workoutPlan->name }}</h4>
                                         <div class="mt-2 text-sm text-gray-500 dark:text-gray-400">
                                             {{ $session->exerciseSets->count() }} exercises • 
-                                            {{ $session->created_at->format('F j, Y g:i A') }}
+                                            {{ $session->date ? $session->date->format('F j, Y g:i A') : 'Date not set' }}
                                         </div>
                                     </div>
                                 </div>

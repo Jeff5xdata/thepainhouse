@@ -8,7 +8,7 @@
                         {{ $session->workoutPlan->name }}
                     </h1>
                     <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                        {{ $session->completed_at ? $session->completed_at->format('F j, Y g:i A') : $session->created_at->format('F j, Y g:i A') }}
+                        {{ $session->completed_at ? $session->completed_at->format('F j, Y g:i A') : ($session->date ? $session->date->format('F j, Y g:i A') : 'Date not set') }}
                     </p>
                 </div>
                 <div class="flex justify-end">
