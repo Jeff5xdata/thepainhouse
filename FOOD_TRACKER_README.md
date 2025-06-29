@@ -9,7 +9,9 @@ This feature adds comprehensive food tracking functionality to The Pain House wo
 -   **Nutrition Tracking**: Track calories, protein, carbs, fat, and other nutrients
 -   **Meal Organization**: Organize food items by meal type (breakfast, lunch, dinner, snack)
 -   **Daily Summaries**: View daily nutrition totals and breakdowns
+-   **Weekly Summaries**: View weekly nutrition totals (Monday-Sunday) with daily breakdown
 -   **Food History**: Keep track of what you've eaten with timestamps
+-   **View Modes**: Toggle between daily and weekly views
 
 ## Setup Instructions
 
@@ -81,10 +83,27 @@ These endpoints require authentication via Sanctum.
 
 ### Viewing Your Food Log
 
+#### Daily View
+
 -   **Daily Summary**: See total calories, protein, carbs, and fat for the selected date
 -   **Meal Breakdown**: View food items organized by meal type
 -   **Date Navigation**: Use the date picker to view different days
 -   **Delete Items**: Click the trash icon to remove food items from your log
+
+#### Weekly View
+
+-   **Weekly Summary**: See total calories, protein, carbs, and fat for the entire week (Monday-Sunday)
+-   **Daily Breakdown Chart**: Visual representation of daily nutrition totals
+-   **Week Navigation**: Navigate between different weeks using arrow buttons
+-   **Detailed Weekly Log**: View all food items organized by date and meal type
+-   **Data Indicators**: Days with food data are highlighted in green
+
+### Switching Between Views
+
+1. Use the "Daily View" and "Weekly Summary" toggle buttons at the top of the page
+2. The interface will automatically adjust to show the appropriate view
+3. In weekly view, you can navigate between weeks using the arrow buttons
+4. The current week range is displayed (e.g., "Jun 23 - Jun 29, 2025")
 
 ### Nutrition Information
 

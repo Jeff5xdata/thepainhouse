@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.navigation')]
 class ExerciseForm extends Component
 {
     use WithFileUploads;

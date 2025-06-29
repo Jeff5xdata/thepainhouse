@@ -38,6 +38,7 @@ return [
     'chomp' => [
         'api_key' => env('CHOMP_API_KEY'),
         'api_user' => env('CHOMP_API_USER'),
+        'lookup_delay' => env('CHOMP_LOOKUP_DELAY', 500), // Delay in milliseconds
     ],
 
 ];

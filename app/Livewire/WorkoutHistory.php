@@ -10,7 +10,7 @@ use Livewire\WithPagination;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.navigation')]
 class WorkoutHistory extends Component
 {
     use WithPagination;

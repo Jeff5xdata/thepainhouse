@@ -90,8 +90,6 @@ class WorkoutPlan extends Model
                     DB::raw('MIN(order_in_day) as order_in_day'),
                     DB::raw('MIN(weight) as weight'),
                     DB::raw('MIN(notes) as notes'),
-                    DB::raw('MIN(warmup_weight) as warmup_weight'),
-                    DB::raw('MIN(warmup_notes) as warmup_notes'),
                     DB::raw('MIN(warmup_time_in_seconds) as warmup_time_in_seconds'),
                     DB::raw('MIN(created_at) as created_at'),
                     DB::raw('MIN(updated_at) as updated_at')

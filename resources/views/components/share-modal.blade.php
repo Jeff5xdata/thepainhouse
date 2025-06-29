@@ -18,25 +18,53 @@
         }
     },
     async generateLink() {
+        console.log('generateLink called with workoutPlanId:', this.workoutPlanId);
+        
+        if (!this.workoutPlanId || this.workoutPlanId === 'null') {
+            console.error('No valid workout plan ID');
+            this.message = 'No workout plan available';
+            return;
+        }
+        
         this.isLoading = true;
         try {
-            const response = await fetch(`/workout-plans/${this.workoutPlanId}/share`, {
+            const url = `/workout-plans/${this.workoutPlanId}/share`;
+            console.log('Making request to:', url);
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name=csrf-token]')?.content;
+            console.log('CSRF token found:', !!csrfToken);
+            
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                    'X-CSRF-TOKEN': csrfToken
                 }
             });
 
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error response text:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
             const data = await response.json();
-            if (response.ok) {
+            console.log('Response data:', data);
+            
+            if (data.share_link) {
                 this.shareLink = data.share_link;
+                console.log('Share link set to:', this.shareLink);
             } else {
-                this.message = data.message || 'An error occurred while generating the link';
+                console.error('No share_link in response:', data);
+                this.message = data.message || 'No share link received from server';
             }
         } catch (error) {
             console.error('Share error:', error);
-            this.message = 'An error occurred. Please try again.';
+            this.message = `Error: ${error.message}`;
         }
         this.isLoading = false;
     },
@@ -111,7 +139,18 @@
         this.isLoading = false;
         this.copied = false;
     }
-}" x-init="workoutPlanId = {{ $workoutPlan->id }}; generateLink()" @keydown.escape="open = false">
+}" x-init="
+    console.log('Share modal initializing...');
+    console.log('User authenticated:', {{ auth()->check() ? 'true' : 'false' }});
+    workoutPlanId = {{ $workoutPlan->id ?? 'null' }};
+    console.log('Workout plan ID set to:', workoutPlanId);
+    if (workoutPlanId && workoutPlanId !== 'null') {
+        generateLink();
+        console.log('generateLink called from x-init');
+    } else {
+        console.error('No workout plan ID available');
+    }
+" @keydown.escape="open = false">
     <!-- Trigger Button -->
     <button @click="open = true" class="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,11 +172,11 @@
         <!-- Backdrop -->
         <div class="fixed inset-0">
             <!-- Primary blur layer -->
-            <div class="absolute inset-0 backdrop-blur-[100px] bg-white/95 dark:bg-white/70"></div>
+            <div class="absolute inset-0 bg-gray-900/95 dark:bg-gray-900/70"></div>
             <!-- Secondary blur layer for depth -->
-            <div class="absolute inset-0 backdrop-blur-3xl bg-white/90 dark:bg-white/60"></div>
+            <div class="absolute inset-0 backdrop-blur-3xl bg-gray-900/90 dark:bg-gray-900/60"></div>
             <!-- Color overlay -->
-            <div class="absolute inset-0 bg-white/[0.98] dark:bg-white/55"></div>
+            <div class="absolute inset-0 bg-gray-900/[0.98] dark:bg-gray-900/55"></div>
         </div>
         
         <!-- Modal Content -->
@@ -171,6 +210,17 @@
 
                     <!-- Body -->
                     <div class="p-4">
+                        <!-- Debug Info -->
+                        <!-- <div class="mb-4 p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded text-xs">
+                            <strong>Debug Info:</strong><br>
+                            Workout Plan ID: <span x-text="workoutPlanId"></span><br>
+                            Share Link: <span x-text="shareLink || 'Not generated yet'"></span><br>
+                            Loading: <span x-text="isLoading"></span><br>
+                            <button @click="generateLink()" class="mt-2 px-2 py-1 bg-blue-500 text-white rounded text-xs">
+                                Test Generate Link
+                            </button>
+                        </div> -->
+                        
                         <!-- Email Step -->
                         <div x-show="step === 'email'" class="space-y-4">
                             <p class="text-sm text-gray-600 dark:text-gray-400">

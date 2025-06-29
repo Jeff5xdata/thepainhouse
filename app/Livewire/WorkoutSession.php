@@ -11,7 +11,7 @@ use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\DB;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.navigation')]
 class WorkoutSession extends Component
 {
     public $workoutSession;
@@ -82,7 +82,6 @@ class WorkoutSession extends Component
                 // Check if there's an existing session for today
                 $existingSession = WorkoutSessionModel::where('user_id', auth()->id())
                     ->whereDate('date', now()->format('Y-m-d'))
-                    ->lockForUpdate() // Prevent race conditions
                     ->first();
 
                 if ($existingSession) {
@@ -148,7 +147,7 @@ class WorkoutSession extends Component
                     $startDate = Carbon::parse($this->workoutPlan->created_at)->startOfDay();
                     $currentWeekNumber = Carbon::now()->startOfDay()->diffInDays($startDate) / 7;
                     $currentWeekNumber = ceil($currentWeekNumber);
-                    $this->currentWeek = min(max(1, $currentWeekNumber), $totalWeeks);
+                    $this->currentWeek = max(1, min($currentWeekNumber, $totalWeeks));
                 }
 
                 $this->currentDay = ucfirst(strtolower(Carbon::now()->format('l')));
@@ -164,8 +163,17 @@ class WorkoutSession extends Component
                 $this->loadExerciseCompletionStatus();
             }
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to load workout session: ' . $e->getMessage());
-            $this->redirect(route('dashboard'));
+            \Log::error('WorkoutSession mount error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            session()->flash('error', 'Failed to load workout session. Please try again or contact support if the problem persists.');
+            
+            // Only redirect to dashboard if it's a critical error
+            if (str_contains($e->getMessage(), 'SQLSTATE') || str_contains($e->getMessage(), 'database')) {
+                $this->redirect(route('dashboard'));
+            }
         }
     }
 
@@ -281,6 +289,11 @@ class WorkoutSession extends Component
 
     public function loadExerciseSets()
     {
+        if (!$this->workoutSession) {
+            $this->exerciseSets = [];
+            return;
+        }
+        
         $sets = $this->workoutSession->exerciseSets()
             ->with('exercise')
             ->orderBy('exercise_id')
@@ -320,6 +333,7 @@ class WorkoutSession extends Component
                 $this->workoutSession = WorkoutSessionModel::create([
                     'user_id' => auth()->id(),
                     'workout_plan_id' => $this->workoutPlan->id,
+                    'name' => 'Workout Session - ' . now()->format('M j, Y'),
                     'date' => $this->sessionDate,
                     'week_number' => $this->currentWeek,
                     'day_of_week' => strtolower($this->currentDay),
@@ -485,10 +499,44 @@ class WorkoutSession extends Component
 
     public function saveExerciseCompletion()
     {
+        \Log::info('saveExerciseCompletion called');
         try {
             if ($this->currentExerciseId) {
-                // Save exercise completion with notes
-                $this->setNotes[$this->currentExerciseId] = $this->exerciseNotes;
+                \Log::info('Processing exercise completion for ID: ' . $this->currentExerciseId);
+                
+                // Ensure we have a workout session
+                if (!$this->workoutSession) {
+                    \Log::info('Creating new workout session');
+                    // Create a new workout session if it doesn't exist
+                    $this->workoutSession = WorkoutSessionModel::create([
+                        'user_id' => auth()->id(),
+                        'workout_plan_id' => $this->workoutPlan->id,
+                        'name' => 'Workout Session - ' . now()->format('M j, Y'),
+                        'date' => $this->sessionDate,
+                        'week_number' => $this->currentWeek,
+                        'day_of_week' => strtolower($this->currentDay),
+                        'status' => 'in_progress',
+                        'notes' => $this->sessionNotes,
+                    ]);
+                    
+                    // Create exercise sets for this exercise
+                    $this->createExerciseSets($this->currentExerciseId);
+                } else {
+                    \Log::info('Using existing workout session: ' . $this->workoutSession->id);
+                    // Check if exercise sets exist for this exercise
+                    $existingSets = \App\Models\ExerciseSet::where('workout_session_id', $this->workoutSession->id)
+                        ->where('exercise_id', $this->currentExerciseId)
+                        ->count();
+                    
+                    if ($existingSets === 0) {
+                        \Log::info('Creating exercise sets for exercise: ' . $this->currentExerciseId);
+                        // Create exercise sets if they don't exist
+                        $this->createExerciseSets($this->currentExerciseId);
+                    }
+                }
+                
+                // Save the form data (weights, reps, notes) for this exercise
+                $this->saveExerciseData($this->currentExerciseId);
                 
                 // Mark all sets for this exercise as completed
                 if (isset($this->exerciseSets[$this->currentExerciseId])) {
@@ -497,20 +545,20 @@ class WorkoutSession extends Component
                     }
                 }
                 
-                // Mark the exercise as complete in the workout plan schedule
-                \App\Models\WorkoutPlanSchedule::where('workout_plan_id', $this->workoutPlan->id)
+                // Update the exercise sets in the database to mark them as completed
+                \App\Models\ExerciseSet::where('workout_session_id', $this->workoutSession->id)
                     ->where('exercise_id', $this->currentExerciseId)
-                    ->where('week_number', $this->currentWeek)
-                    ->where('day_of_week', strtolower($this->currentDay))
-                    ->update(['complete' => true]);
+                    ->update(['completed' => true]);
                 
                 $this->exerciseNotes = '';
                 $this->showNotesModal = false;
                 $this->currentExerciseId = null;
                 
+                \Log::info('Exercise completion saved successfully');
                 session()->flash('message', 'Exercise completed successfully!');
             }
         } catch (\Exception $e) {
+            \Log::error('Error in saveExerciseCompletion: ' . $e->getMessage());
             session()->flash('error', 'Failed to complete exercise: ' . $e->getMessage());
         }
     }
@@ -524,13 +572,12 @@ class WorkoutSession extends Component
 
     public function loadExistingNotes()
     {
-        try {
-            if (!$this->isNewSession && $this->workoutSession) {
-                $this->sessionNotes = $this->workoutSession->notes;
-            }
-        } catch (\Exception $e) {
-            // Silently handle this error as it's not critical
+        if (!$this->workoutSession) {
+            $this->sessionNotes = '';
+            return;
         }
+        
+        $this->sessionNotes = $this->workoutSession->notes ?? '';
     }
 
     public function initializeSetValues()
@@ -570,38 +617,33 @@ class WorkoutSession extends Component
 
     protected function loadExistingSetValues()
     {
-        try {
-            if (!$this->isNewSession && $this->workoutSession) {
-                $sets = $this->workoutSession->exerciseSets()
-                    ->orderBy('exercise_id')
-                    ->orderBy('is_warmup', 'desc')
-                    ->orderBy('set_number')
-                    ->get();
+        if (!$this->workoutSession) {
+            return;
+        }
+        
+        $sets = $this->workoutSession->exerciseSets()
+            ->orderBy('exercise_id')
+            ->orderBy('is_warmup', 'desc')
+            ->orderBy('set_number')
+            ->get();
 
-                foreach ($sets as $set) {
-                    $exerciseId = $set->exercise_id;
-                    $setType = $set->is_warmup ? 'warmup' : 'working';
-                    $setNumber = $set->set_number;
-                    
-                    // Check if this is a time-based exercise
-                    $scheduleItem = $this->todayExercises->firstWhere('exercise_id', $exerciseId);
-                    $isTimeBased = $scheduleItem ? ($scheduleItem->is_time_based ?? false) : false;
-                    
-                    if ($isTimeBased) {
-                        // For time-based exercises, load time_in_seconds into setReps (since that's what the form uses)
-                        $this->setWeights[$exerciseId][$setType][$setNumber] = null;
-                        $this->setReps[$exerciseId][$setType][$setNumber] = $set->time_in_seconds;
-                    } else {
-                        // For rep-based exercises, load weight and reps normally
-                        $this->setWeights[$exerciseId][$setType][$setNumber] = $set->weight;
-                        $this->setReps[$exerciseId][$setType][$setNumber] = $set->reps;
-                    }
-                    
-                    $this->setNotes[$exerciseId][$setType][$setNumber] = $set->notes;
-                }
+        foreach ($sets as $set) {
+            $exerciseId = $set->exercise_id;
+            $setType = $set->is_warmup ? 'warmup' : 'working';
+            
+            if (!isset($this->setWeights[$exerciseId])) {
+                $this->setWeights[$exerciseId] = ['warmup' => [], 'working' => []];
             }
-        } catch (\Exception $e) {
-            session()->flash('error', 'Failed to load existing set values: ' . $e->getMessage());
+            if (!isset($this->setReps[$exerciseId])) {
+                $this->setReps[$exerciseId] = ['warmup' => [], 'working' => []];
+            }
+            if (!isset($this->setNotes[$exerciseId])) {
+                $this->setNotes[$exerciseId] = ['warmup' => [], 'working' => []];
+            }
+            
+            $this->setWeights[$exerciseId][$setType][$set->set_number] = $set->weight;
+            $this->setReps[$exerciseId][$setType][$set->set_number] = $set->reps;
+            $this->setNotes[$exerciseId][$setType][$set->set_number] = $set->notes;
         }
     }
 
@@ -611,12 +653,20 @@ class WorkoutSession extends Component
             if ($this->workoutPlan && $this->todayExercises) {
                 $exerciseIds = $this->todayExercises->pluck('exercise_id');
                 
-                $completionStatus = \App\Models\WorkoutPlanSchedule::where('workout_plan_id', $this->workoutPlan->id)
-                    ->whereIn('exercise_id', $exerciseIds)
-                    ->where('week_number', $this->currentWeek)
-                    ->where('day_of_week', strtolower($this->currentDay))
-                    ->pluck('complete', 'exercise_id')
-                    ->toArray();
+                // Check completion status through workout sessions and exercise sets
+                $completionStatus = [];
+                foreach ($exerciseIds as $exerciseId) {
+                    $isCompleted = \App\Models\WorkoutSession::where('workout_plan_id', $this->workoutPlan->id)
+                        ->where('user_id', auth()->id())
+                        ->whereDate('date', now()->format('Y-m-d'))
+                        ->where('status', 'completed')
+                        ->whereHas('exerciseSets', function($query) use ($exerciseId) {
+                            $query->where('exercise_id', $exerciseId);
+                        })
+                        ->exists();
+                    
+                    $completionStatus[$exerciseId] = $isCompleted;
+                }
                 
                 $this->exerciseCompletionStatus = $completionStatus;
             }
@@ -624,6 +674,129 @@ class WorkoutSession extends Component
             // Silently handle this error as it's not critical
             $this->exerciseCompletionStatus = [];
         }
+    }
+
+    protected function createExerciseSets($exerciseId)
+    {
+        $scheduleItem = $this->todayExercises->firstWhere('exercise_id', $exerciseId);
+        if (!$scheduleItem) {
+            return;
+        }
+        
+        $isTimeBased = $scheduleItem->is_time_based ?? false;
+        
+        // Create warmup sets if needed
+        if ($scheduleItem->has_warmup) {
+            for ($i = 1; $i <= $scheduleItem->warmup_sets; $i++) {
+                \App\Models\ExerciseSet::create([
+                    'workout_session_id' => $this->workoutSession->id,
+                    'exercise_id' => $exerciseId,
+                    'set_number' => $i,
+                    'is_warmup' => true,
+                    'reps' => $isTimeBased ? 0 : $scheduleItem->warmup_reps,
+                    'weight' => $isTimeBased ? null : 0,
+                    'time_in_seconds' => $isTimeBased ? $scheduleItem->warmup_time_in_seconds : null,
+                    'completed' => false,
+                ]);
+            }
+        }
+        
+        // Create working sets
+        for ($i = 1; $i <= $scheduleItem->sets; $i++) {
+            \App\Models\ExerciseSet::create([
+                'workout_session_id' => $this->workoutSession->id,
+                'exercise_id' => $exerciseId,
+                'set_number' => $i,
+                'is_warmup' => false,
+                'reps' => $isTimeBased ? 0 : $scheduleItem->reps,
+                'weight' => $isTimeBased ? null : 0,
+                'time_in_seconds' => $isTimeBased ? $scheduleItem->time_in_seconds : null,
+                'completed' => false,
+            ]);
+        }
+    }
+
+    protected function saveExerciseData($exerciseId)
+    {
+        $scheduleItem = $this->todayExercises->firstWhere('exercise_id', $exerciseId);
+        if (!$scheduleItem) {
+            return;
+        }
+        
+        $isTimeBased = $scheduleItem->is_time_based ?? false;
+        
+        // Save warmup sets if they exist
+        if ($scheduleItem->has_warmup) {
+            for ($i = 1; $i <= $scheduleItem->warmup_sets; $i++) {
+                $set = \App\Models\ExerciseSet::where('workout_session_id', $this->workoutSession->id)
+                    ->where('exercise_id', $exerciseId)
+                    ->where('is_warmup', true)
+                    ->where('set_number', $i)
+                    ->first();
+                    
+                if ($set) {
+                    $weight = $isTimeBased ? null : ($this->setWeights[$exerciseId]['warmup'][$i] ?? 0);
+                    $weight = $weight ?: 0; // Convert null/empty to 0
+                    $reps = $isTimeBased ? 0 : ($this->setReps[$exerciseId]['warmup'][$i] ?? $scheduleItem->warmup_reps);
+                    $timeInSeconds = $isTimeBased ? ($this->setReps[$exerciseId]['warmup'][$i] ?? $scheduleItem->warmup_time_in_seconds) : null;
+                    
+                    $set->update([
+                        'weight' => $weight,
+                        'reps' => $reps,
+                        'time_in_seconds' => $timeInSeconds,
+                        'notes' => $this->setNotes[$exerciseId]['warmup'][$i] ?? null,
+                        'completed' => true,
+                    ]);
+                }
+            }
+        }
+        
+        // Save working sets
+        for ($i = 1; $i <= $scheduleItem->sets; $i++) {
+            $set = \App\Models\ExerciseSet::where('workout_session_id', $this->workoutSession->id)
+                ->where('exercise_id', $exerciseId)
+                ->where('is_warmup', false)
+                ->where('set_number', $i)
+                ->first();
+                
+            if ($set) {
+                $weight = $isTimeBased ? null : ($this->setWeights[$exerciseId]['working'][$i] ?? 0);
+                $weight = $weight ?: 0; // Convert null/empty to 0
+                $reps = $isTimeBased ? 0 : ($this->setReps[$exerciseId]['working'][$i] ?? $scheduleItem->reps);
+                $timeInSeconds = $isTimeBased ? ($this->setReps[$exerciseId]['working'][$i] ?? $scheduleItem->time_in_seconds) : null;
+                
+                $set->update([
+                    'weight' => $weight,
+                    'reps' => $reps,
+                    'time_in_seconds' => $timeInSeconds,
+                    'notes' => $this->setNotes[$exerciseId]['working'][$i] ?? null,
+                    'completed' => true,
+                ]);
+            }
+        }
+        
+        // Save exercise-level notes from the modal
+        if ($this->exerciseNotes) {
+            \Log::info('Saving exercise notes: ' . $this->exerciseNotes);
+            // Store exercise notes in the session notes or create a separate field
+            $this->setNotes[$exerciseId] = $this->exerciseNotes;
+            
+            // Also save the exercise notes to the workout session notes
+            $currentNotes = $this->workoutSession->notes ?? '';
+            $exerciseName = $scheduleItem->exercise->name ?? 'Exercise ' . $exerciseId;
+            $newNote = "\n\n" . $exerciseName . " Notes: " . $this->exerciseNotes;
+            $this->workoutSession->update(['notes' => $currentNotes . $newNote]);
+            \Log::info('Exercise notes saved to workout session');
+        } else {
+            \Log::info('No exercise notes to save');
+        }
+    }
+
+    public function forceShowModal()
+    {
+        $this->showNotesModal = true;
+        $this->currentExerciseId = 58;
+        \Log::info('Force show modal called - showNotesModal: ' . ($this->showNotesModal ? 'true' : 'false') . ', currentExerciseId: ' . $this->currentExerciseId);
     }
 
     public function render()

@@ -9,7 +9,7 @@ use App\Models\WorkoutSession;
 use App\Models\WorkoutPlan;
 use Carbon\Carbon;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.navigation')]
 #[Title('Dashboard')]
 class Dashboard extends Component
 {

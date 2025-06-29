@@ -21,30 +21,25 @@ class WorkoutPlanSchedule extends Model
         'week_number',
         'day_of_week',
         'order_in_day',
-        'set_number',
         'is_time_based',
         'sets',
         'reps',
         'weight',
-        'notes',
         'time_in_seconds',
+        'notes',
         'has_warmup',
         'warmup_sets',
         'warmup_reps',
         'warmup_time_in_seconds',
         'warmup_weight_percentage',
-        'warmup_weight',
-        'warmup_notes',
-        'complete',
+        'set_details',
     ];
 
     protected $casts = [
         'is_time_based' => 'boolean',
         'has_warmup' => 'boolean',
-        'complete' => 'boolean',
         'week_number' => 'integer',
         'order_in_day' => 'integer',
-        'set_number' => 'integer',
         'sets' => 'integer',
         'reps' => 'integer',
         'weight' => 'decimal:2',
@@ -53,14 +48,13 @@ class WorkoutPlanSchedule extends Model
         'warmup_reps' => 'integer',
         'warmup_time_in_seconds' => 'integer',
         'warmup_weight_percentage' => 'integer',
-        'warmup_weight' => 'decimal:2',
+        'set_details' => 'array',
     ];
 
     protected $attributes = [
         'order_in_day' => 0,
         'is_time_based' => false,
         'has_warmup' => false,
-        'complete' => false,
         'sets' => 3,
         'reps' => 10,
     ];
@@ -77,7 +71,7 @@ class WorkoutPlanSchedule extends Model
 
     public function getDayNameAttribute(): string
     {
-        $days = [
+        $dayNames = [
             'monday' => 'Monday',
             'tuesday' => 'Tuesday',
             'wednesday' => 'Wednesday',
@@ -87,52 +81,161 @@ class WorkoutPlanSchedule extends Model
             'sunday' => 'Sunday'
         ];
 
-        return $days[$this->day_of_week] ?? ucfirst($this->day_of_week);
+        return $dayNames[$this->day_of_week] ?? ucfirst($this->day_of_week);
     }
 
     /**
-     * Get the cache key for a specific schedule item
+     * Get formatted set details with proper numbering
      */
-    protected function getCacheKey(): string
+    public function getFormattedSetDetailsAttribute(): array
     {
-        return "workout_plan_schedule_{$this->workout_plan_id}_{$this->week_number}_{$this->day_of_week}";
+        if (empty($this->set_details)) {
+            return $this->generateDefaultSetDetails();
+        }
+
+        return $this->set_details;
     }
 
     /**
-     * Get the cache key pattern for all schedule items of a workout plan
+     * Generate default set details based on exercise configuration
      */
-    protected static function getWorkoutPlanCachePattern(int $workoutPlanId): string
+    public function generateDefaultSetDetails(): array
     {
-        return "workout_plan_schedule_{$workoutPlanId}_*";
+        $setDetails = [];
+        $setNumber = 1;
+
+        // Add warmup sets if enabled
+        if ($this->has_warmup && $this->warmup_sets > 0) {
+            for ($i = 1; $i <= $this->warmup_sets; $i++) {
+                $setDetails[] = [
+                    'set_number' => $setNumber++,
+                    'reps' => $this->warmup_reps,
+                    'weight' => null, // Will be calculated based on percentage
+                    'notes' => "Warmup Set {$i}",
+                    'time_in_seconds' => $this->warmup_time_in_seconds,
+                    'is_warmup' => true,
+                ];
+            }
+        }
+
+        // Add work sets
+        for ($i = 1; $i <= $this->sets; $i++) {
+            $setDetails[] = [
+                'set_number' => $setNumber++,
+                'reps' => $this->is_time_based ? 0 : $this->reps,
+                'weight' => $this->weight,
+                'notes' => "Work Set {$i}",
+                'time_in_seconds' => $this->time_in_seconds,
+                'is_warmup' => false,
+            ];
+        }
+
+        return $setDetails;
     }
 
     /**
-     * Flush the query cache for this model
+     * Update set details and save
      */
-    public static function flushQueryCache(): void
+    public function updateSetDetails(array $setDetails): void
     {
-        // Since we can't use tags, we'll just clear all cache
-        // In a production environment, you might want to be more selective
-        Cache::flush();
+        $this->set_details = $setDetails;
+        $this->save();
     }
 
     /**
-     * Boot the model
+     * Update sets and reps, then regenerate set_details to keep them in sync
+     */
+    public function updateSetsAndReps(int $sets, int $reps, ?int $warmupSets = null, ?int $warmupReps = null): void
+    {
+        $this->sets = $sets;
+        $this->reps = $reps;
+        
+        if ($warmupSets !== null) {
+            $this->warmup_sets = $warmupSets;
+        }
+        if ($warmupReps !== null) {
+            $this->warmup_reps = $warmupReps;
+        }
+        
+        // Regenerate set_details to keep JSON in sync with columns
+        $this->set_details = $this->generateDefaultSetDetails();
+        $this->save();
+    }
+
+    /**
+     * Boot method to ensure set_details is always generated when sets/reps change
      */
     protected static function boot()
     {
         parent::boot();
-
-        static::saved(function ($model) {
-            Cache::forget($model->getCacheKey());
+        
+        static::saving(function ($model) {
+            // If set_details is empty but sets/reps are set, generate default set_details
+            if (empty($model->set_details) && $model->sets > 0) {
+                $model->set_details = $model->generateDefaultSetDetails();
+            }
         });
+    }
 
-        static::deleted(function ($model) {
-            Cache::forget($model->getCacheKey());
-        });
+    /**
+     * Get the total number of sets (warmup + work)
+     */
+    public function getTotalSetsAttribute(): int
+    {
+        $total = $this->sets;
+        if ($this->has_warmup && $this->warmup_sets > 0) {
+            $total += $this->warmup_sets;
+        }
+        return $total;
+    }
 
-        static::updated(function ($model) {
-            Cache::forget($model->getCacheKey());
+    /**
+     * Get the total number of reps (warmup + work)
+     */
+    public function getTotalRepsAttribute(): int
+    {
+        $total = $this->sets * $this->reps;
+        if ($this->has_warmup && $this->warmup_sets > 0) {
+            $total += $this->warmup_sets * $this->warmup_reps;
+        }
+        return $total;
+    }
+
+    /**
+     * Get the total time in seconds
+     */
+    public function getTotalTimeAttribute(): int
+    {
+        $total = $this->sets * ($this->time_in_seconds ?? 0);
+        if ($this->has_warmup && $this->warmup_sets > 0) {
+            $total += $this->warmup_sets * ($this->warmup_time_in_seconds ?? 0);
+        }
+        return $total;
+    }
+
+    /**
+     * Clear cache for this schedule item
+     */
+    public static function clearCache(int $workoutPlanId): void
+    {
+        $cacheKey = "workout_plan_{$workoutPlanId}_schedule";
+        Cache::forget($cacheKey);
+    }
+
+    /**
+     * Get schedule items for a specific workout plan, week, and day
+     */
+    public static function getScheduleForDay(int $workoutPlanId, int $week, string $day)
+    {
+        $cacheKey = "workout_plan_{$workoutPlanId}_week_{$week}_day_{$day}";
+        
+        return Cache::remember($cacheKey, 3600, function () use ($workoutPlanId, $week, $day) {
+            return static::where('workout_plan_id', $workoutPlanId)
+                ->where('week_number', $week)
+                ->where('day_of_week', $day)
+                ->with('exercise')
+                ->orderBy('order_in_day')
+                ->get();
         });
     }
 } 

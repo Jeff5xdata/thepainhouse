@@ -132,11 +132,15 @@
                             <div class="grid gap-6">
                                 @foreach($todayExercises as $scheduleItem)
                                     @php
-                                        $isCompleted = \App\Models\WorkoutPlanSchedule::where('workout_plan_id', $workoutPlan->id)
-                                            ->where('exercise_id', $scheduleItem->exercise_id)
-                                            ->where('week_number', $currentWeek)
-                                            ->where('day_of_week', strtolower($currentDay))
-                                            ->value('complete') ?? false;
+                                        // Check if there's a completed workout session for today with this exercise
+                                        $isCompleted = \App\Models\WorkoutSession::where('workout_plan_id', $workoutPlan->id)
+                                            ->where('user_id', auth()->id())
+                                            ->whereDate('date', now()->format('Y-m-d'))
+                                            ->where('status', 'completed')
+                                            ->whereHas('exerciseSets', function($query) use ($scheduleItem) {
+                                                $query->where('exercise_id', $scheduleItem->exercise_id);
+                                            })
+                                            ->exists();
                                     @endphp
                                     <div class="rounded-lg shadow-sm border dark:border-gray-700 p-4 sm:p-6 transition-colors duration-200 {{ $isCompleted ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-white dark:bg-gray-800' }}">
                                         <!-- Exercise Header -->
@@ -329,6 +333,7 @@
                                                 </label>
                                             </div>
                                             <div class="flex items-center">
+                                                <!-- Test button -->
                                                 <button type="button"
                                                     @if($isCompleted) disabled @endif
                                                     wire:click="completeExercise({{ $scheduleItem->exercise_id }})"
@@ -409,11 +414,15 @@
                             <div class="grid gap-6">
                                 @foreach($todayExercises as $scheduleItem)
                                     @php
-                                        $isCompleted = \App\Models\WorkoutPlanSchedule::where('workout_plan_id', $workoutPlan->id)
-                                            ->where('exercise_id', $scheduleItem->exercise_id)
-                                            ->where('week_number', $currentWeek)
-                                            ->where('day_of_week', strtolower($currentDay))
-                                            ->value('complete') ?? false;
+                                        // Check if there's a completed workout session for today with this exercise
+                                        $isCompleted = \App\Models\WorkoutSession::where('workout_plan_id', $workoutPlan->id)
+                                            ->where('user_id', auth()->id())
+                                            ->whereDate('date', now()->format('Y-m-d'))
+                                            ->where('status', 'completed')
+                                            ->whereHas('exerciseSets', function($query) use ($scheduleItem) {
+                                                $query->where('exercise_id', $scheduleItem->exercise_id);
+                                            })
+                                            ->exists();
                                     @endphp
                                     <div class="rounded-lg shadow-sm border dark:border-gray-700 p-4 sm:p-6 transition-colors duration-200 {{ $isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-white dark:bg-gray-800' }}">
                                         <!-- Exercise Header -->
@@ -605,22 +614,25 @@
                                                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Progression Toggle</span>
                                                 </label>
                                             </div>
-                                            <button type="button"
-                                                @if($isCompleted) disabled @endif
-                                                wire:click="completeExercise({{ $scheduleItem->exercise_id }})"
-                                                class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 w-full sm:w-auto {{ $isCompleted ? 'bg-green-600 text-white cursor-not-allowed' : 'text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500' }}">
-                                                @if($isCompleted)
-                                                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                    Completed
-                                                @else
-                                                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                                    </svg>
-                                                    Complete Exercise
-                                                @endif
-                                            </button>
+                                            <div class="flex items-center">
+                                                <!-- Test button -->
+                                                <button type="button"
+                                                    @if($isCompleted) disabled @endif
+                                                    wire:click="completeExercise({{ $scheduleItem->exercise_id }})"
+                                                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 w-full sm:w-auto {{ $isCompleted ? 'bg-green-600 text-white cursor-not-allowed' : 'text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500' }}">
+                                                    @if($isCompleted)
+                                                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                        Completed
+                                                    @else
+                                                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                        Complete Exercise
+                                                    @endif
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 @endforeach

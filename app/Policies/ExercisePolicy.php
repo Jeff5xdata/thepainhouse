@@ -42,7 +42,7 @@ class ExercisePolicy
     {
         // Global exercise: only owner can update
         if (is_null($exercise->user_id)) {
-            return $user->owner === 'true' || $user->owner === true || $user->owner === 1;
+            return $user->owner === true;
         }
         // Custom exercise: only creator can update
         return $exercise->user_id === $user->id;
@@ -55,7 +55,7 @@ class ExercisePolicy
     {
         // Global exercise: only owner can delete
         if (is_null($exercise->user_id)) {
-            return $user->owner === 'true' || $user->owner === true || $user->owner === 1;
+            return $user->owner === true;
         }
         // Custom exercise: only creator can delete
         return $exercise->user_id === $user->id;

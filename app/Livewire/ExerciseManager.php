@@ -7,7 +7,7 @@ use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Rule;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.navigation')]
 class ExerciseManager extends Component
 {
     #[Rule('required|string|max:255')]

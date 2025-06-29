@@ -6,7 +6,7 @@ use App\Models\WorkoutSession;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.navigation')]
 class WorkoutSessionDetails extends Component
 {
     public $session;

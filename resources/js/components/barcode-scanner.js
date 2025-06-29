@@ -15,6 +15,11 @@ class BarcodeScanner {
                 await this.loadZXingLibrary();
             }
 
+            // Check if ZXing is available after loading
+            if (typeof ZXing === "undefined") {
+                throw new Error("Failed to load ZXing library");
+            }
+
             this.codeReader = new ZXing.BrowserMultiFormatReader();
             this.videoElement = document.getElementById(this.containerId);
 
@@ -34,9 +39,49 @@ class BarcodeScanner {
     async loadZXingLibrary() {
         return new Promise((resolve, reject) => {
             const script = document.createElement("script");
-            script.src = "https://unpkg.com/@zxing/library@latest";
-            script.onload = resolve;
-            script.onerror = reject;
+            script.src =
+                "https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js";
+
+            script.onload = () => {
+                // Wait a bit for the library to initialize
+                setTimeout(() => {
+                    if (typeof ZXing !== "undefined") {
+                        resolve();
+                    } else {
+                        reject(new Error("ZXing library failed to initialize"));
+                    }
+                }, 100);
+            };
+
+            script.onerror = () => {
+                // Try fallback URL
+                const fallbackScript = document.createElement("script");
+                fallbackScript.src =
+                    "https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js";
+
+                fallbackScript.onload = () => {
+                    setTimeout(() => {
+                        if (typeof ZXing !== "undefined") {
+                            resolve();
+                        } else {
+                            reject(
+                                new Error("ZXing library failed to initialize")
+                            );
+                        }
+                    }, 100);
+                };
+
+                fallbackScript.onerror = () => {
+                    reject(
+                        new Error(
+                            "Failed to load ZXing library from both sources"
+                        )
+                    );
+                };
+
+                document.head.appendChild(fallbackScript);
+            };
+
             document.head.appendChild(script);
         });
     }

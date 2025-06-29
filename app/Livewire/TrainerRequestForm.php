@@ -97,6 +97,7 @@ class TrainerRequestForm extends Component
 
             $this->successMessage = 'Trainer request sent successfully!';
             $this->reset(['trainer_email', 'message']);
+            redirect()->route('messaging.center');
 
         } catch (\Exception $e) {
             \Log::error('Trainer request creation error', [

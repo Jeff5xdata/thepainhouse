@@ -42,11 +42,21 @@ class ChompApiService
         }
 
         try {
-            $response = Http::get("{$this->baseUrl}/food/branded/barcode.php", [
+            $url = "{$this->baseUrl}/food/branded/barcode.php";
+            $params = [
                 'api_key' => $this->apiKey,
                 'code' => $barcode,
                 'user_id' => $this->apiUser
+            ];
+            
+            // Log the URL and parameters being sent
+            Log::info('Chomp API barcode search request', [
+                'url' => $url,
+                'params' => array_merge($params, ['api_key' => substr($this->apiKey, 0, 10) . '...']),
+                'full_url' => $url . '?' . http_build_query($params)
             ]);
+            
+            $response = Http::get($url, $params);
 
             if ($response->successful()) {
                 return $response->json();
@@ -78,20 +88,73 @@ class ChompApiService
             return [];
         }
 
-        try {
-            $response = Http::get("{$this->baseUrl}/food/branded/name.php", [
-                'api_key' => $this->apiKey,
-                'name' => $query
+        if (empty($this->apiUser)) {
+            Log::error('Chomp API user not configured');
+            return [];
+        }
+
+        // Add lookup delay to prevent rapid API calls
+        $delay = config('services.chomp.lookup_delay', 500); // Default 500ms
+        if ($delay > 0) {
+            usleep($delay * 1000); // Convert milliseconds to microseconds
+            Log::info('Chomp API name search delay applied', [
+                'query' => $query,
+                'delay_ms' => $delay
             ]);
+        }
+
+        try {
+            $url = "{$this->baseUrl}/food/ingredient/search.php";
+            $params = [
+                'api_key' => $this->apiKey,
+                'name' => $query,
+                'user_id' => $this->apiUser
+            ];
+            
+            // Log the URL and parameters being sent
+            Log::info('Chomp API name search request', [
+                'url' => $url,
+                'params' => array_merge($params, ['api_key' => substr($this->apiKey, 0, 10) . '...']),
+                'full_url' => $url . '?' . http_build_query($params)
+            ]);
+            
+            $response = Http::get($url, $params);
 
             if ($response->successful()) {
                 $data = $response->json();
-                // The API might return a single item or an array, normalize it
-                if (isset($data['items'])) {
-                    return array_slice($data['items'], 0, $limit);
-                } elseif (is_array($data)) {
-                    return array_slice($data, 0, $limit);
+                
+                // Debug logging
+                Log::info('Chomp API name search response structure', [
+                    'query' => $query,
+                    'data_keys' => array_keys($data),
+                    'has_items' => isset($data['items']),
+                    'items_count' => isset($data['items']) ? count($data['items']) : 0,
+                    'is_array' => is_array($data),
+                ]);
+                
+                // The API returns data with an 'items' key containing the array of results
+                if (isset($data['items']) && is_array($data['items'])) {
+                    $result = array_slice($data['items'], 0, $limit);
+                    Log::info('Chomp API name search returning items', [
+                        'query' => $query,
+                        'returned_count' => count($result)
+                    ]);
+                    return $result;
+                } elseif (is_array($data) && !empty($data)) {
+                    // Fallback: if data is directly an array (not wrapped in 'items')
+                    $result = array_slice($data, 0, $limit);
+                    Log::info('Chomp API name search returning array data', [
+                        'query' => $query,
+                        'returned_count' => count($result)
+                    ]);
+                    return $result;
                 }
+                
+                Log::warning('Chomp API name search - no valid data structure found', [
+                    'query' => $query,
+                    'data_structure' => gettype($data),
+                    'data_keys' => is_array($data) ? array_keys($data) : 'not array'
+                ]);
                 return [];
             }
 
@@ -118,6 +181,11 @@ class ChompApiService
     {
         if (empty($this->apiKey)) {
             Log::error('Chomp API key not configured');
+            return null;
+        }
+
+        if (empty($this->apiUser)) {
+            Log::error('Chomp API user not configured');
             return null;
         }
 
@@ -180,7 +248,7 @@ class ChompApiService
             'sodium' => $getNutrient('Sodium, Na'),
             'cholesterol' => $getNutrient('Cholesterol'),
             'image_url' => $chompData['packaging_photos']['front']['display'] ?? null,
-            'chomp_id' => $chompData['id'] ?? null,
+            'chomp_id' => $chompData['barcode'] ?? null,
         ];
     }
 } 

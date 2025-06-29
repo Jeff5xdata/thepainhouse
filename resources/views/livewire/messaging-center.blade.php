@@ -160,7 +160,7 @@
                                 </div>
                                 <div class="ml-4 flex space-x-2">
                                     <button 
-                                        wire:click="replyToTrainerRequest('{{ $request['client']['email'] }}')"
+                                        wire:click="replyToTrainerRequest('{{ addslashes($request['client']['email']) }}')"
                                         class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
                                     >
                                         Reply
@@ -222,7 +222,7 @@
                                 </div>
                                 <div class="ml-4 flex space-x-2">
                                     <button 
-                                        wire:click="replyToTrainerRequest('{{ $request['trainer_email'] }}')"
+                                        wire:click="replyToTrainerRequest('{{ addslashes($request['trainer_email']) }}')"
                                         class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
                                     >
                                         Reply
@@ -242,13 +242,13 @@
 
     <!-- Conversation View -->
     @if($selectedConversation)
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" wire:click="$set('selectedConversation', null)">
-            <div class="relative top-20 mx-auto p-5 border w-3/4 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800" wire:click.stop>
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" wire:click="closeConversation">
+            <div class="relative top-20 mx-auto p-5 border w-3/4 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800" onclick="event.stopPropagation()">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-white">
                         Conversation with {{ $selectedConversation['other_user']['name'] }}
                     </h3>
-                    <button wire:click="$set('selectedConversation', null)" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <button wire:click="closeConversation" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>

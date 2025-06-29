@@ -8,7 +8,7 @@ use Livewire\Component;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.navigation')]
 class WorkoutProgress extends Component
 {
     public $selectedExercise = null;
@@ -52,7 +52,7 @@ class WorkoutProgress extends Component
             ->with(['exerciseSets' => function ($query) {
                 $query->where('exercise_id', $this->selectedExercise)
                     ->where('completed', true)
-                    ->orderBy('completed_at');
+                    ->orderBy('created_at');
             }])
             ->get();
 

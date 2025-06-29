@@ -1,4 +1,4 @@
-<x-layouts.app>
+<x-layouts.navigation>
     <div class="offline-container">
         <div class="offline-card">
             <div class="text-center">
@@ -21,4 +21,4 @@
             </div>
         </div>
     </div>
-</x-layouts.app> 
+</x-layouts.navigation> 

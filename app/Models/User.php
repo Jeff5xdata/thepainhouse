@@ -49,6 +49,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'owner' => 'boolean',
             'is_trainer' => 'boolean',
         ];
     }
@@ -130,6 +131,33 @@ class User extends Authenticatable
     public function unreadMessagesCount(): int
     {
         return $this->receivedMessages()->unread()->count();
+    }
+
+    /**
+     * Check if user has any unread messages
+     */
+    public function hasUnreadMessages(): bool
+    {
+        return $this->unreadMessagesCount() > 0;
+    }
+
+    /**
+     * Get unread messages for this user
+     */
+    public function unreadMessages()
+    {
+        return $this->receivedMessages()->unread();
+    }
+
+    /**
+     * Mark all messages as read for this user
+     */
+    public function markAllMessagesAsRead(): void
+    {
+        $this->receivedMessages()->unread()->update([
+            'is_read' => true,
+            'read_at' => now(),
+        ]);
     }
 
     /**

@@ -13,6 +13,16 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **Warm-up Sets**: Configure automatic warm-up sets with percentage-based weights
 -   **Time-based Exercises**: Support for timed exercises (cardio, holds, etc.)
 
+### Trainer-Client Management
+
+-   **Trainer Accounts**: Dedicated trainer profiles with client management capabilities
+-   **Client Assignment**: Trainers can manage multiple clients with individual workout plans
+-   **Workout Copying**: Copy workouts from trainer's plan to client plans with one click
+-   **Client Progress Tracking**: Monitor client progress, workout completion, and performance
+-   **Client Communication**: Built-in messaging system for trainer-client communication
+-   **Client Dashboard**: Comprehensive overview of client's fitness journey
+-   **Workout Assignment**: Assign new workouts to clients with automatic notifications
+
 ### Progress Tracking & Analytics
 
 -   **Progress Monitoring**: Track performance over time with detailed analytics
@@ -29,6 +39,7 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **Equipment Types**: Filter exercises by equipment (barbell, dumbbell, machine, etc.)
 -   **Custom Exercise Creation**: Add your own exercises to the library
 -   **Workout Settings**: Configure default rest timers, warm-up sets, and work sets
+-   **Workout Copying**: Copy workouts between days, weeks, or to clients
 
 ### Data Management & Sharing
 
@@ -104,6 +115,37 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **Charts**: Custom progress tracking with Alpine.js
 -   **File Handling**: PhpSpreadsheet for data export/import
 
+## 👥 Trainer-Client Workflow
+
+### For Trainers
+
+1. **Create Trainer Account**: Register and set up your trainer profile
+2. **Accept Client Requests**: Clients can send trainer requests via email
+3. **Manage Clients**: View all your clients in the trainer dashboard
+4. **Create Workout Plans**: Design comprehensive workout plans for clients
+5. **Copy Workouts**: Copy workouts from your plan to client plans
+6. **Monitor Progress**: Track client progress and workout completion
+7. **Communicate**: Send messages and notifications to clients
+
+### For Clients
+
+1. **Request Trainer**: Send a trainer request with a message
+2. **Accept Trainer**: Approve trainer requests to establish relationship
+3. **Receive Workouts**: Get assigned workouts from your trainer
+4. **Track Progress**: Complete workouts and monitor your progress
+5. **Communicate**: Message your trainer for guidance and support
+
+### Copy to Client Feature
+
+Trainers can easily copy workouts to their clients:
+
+1. **View Your Plan**: Navigate to your workout plan view
+2. **Select Workout**: Click the copy button on any day's workout
+3. **Choose Target**: Select whether to copy to your plan or to a client
+4. **Select Client**: Choose from your list of clients
+5. **Set Schedule**: Specify target week and day for the client
+6. **Copy & Notify**: The workout is copied and the client is automatically notified
+
 ## 📱 Progressive Web App Features
 
 -   **Installable**: Add to home screen on mobile devices
@@ -140,13 +182,15 @@ Configure your default workout preferences:
 
 The application manages several key data models:
 
--   **Users**: Authentication and profile management
+-   **Users**: Authentication and profile management with trainer/client relationships
 -   **Exercises**: Exercise library with categories and equipment
 -   **Workout Plans**: Multi-week workout schedules
 -   **Workout Sessions**: Individual workout tracking
 -   **Exercise Sets**: Detailed set-by-set logging
 -   **Workout Settings**: User preferences and defaults
 -   **Share Links**: Secure workout plan sharing
+-   **Trainer Requests**: Client-trainer relationship management
+-   **Messages**: Communication system between trainers and clients
 
 ## 🔒 Security Features
 
@@ -155,6 +199,7 @@ The application manages several key data models:
 -   **Data Validation**: Comprehensive input validation
 -   **SQL Injection Protection**: Eloquent ORM with parameter binding
 -   **XSS Protection**: Blade templating with automatic escaping
+-   **Trainer-Client Isolation**: Secure separation of trainer and client data
 
 ## 📈 Performance Optimizations
 
@@ -186,4 +231,4 @@ For support and questions:
 
 ---
 
-**The Pain House** - Transform your strength training journey with comprehensive workout tracking and progress monitoring.
+**The Pain House** - Transform your strength training journey with comprehensive workout tracking, progress monitoring, and trainer-client management.

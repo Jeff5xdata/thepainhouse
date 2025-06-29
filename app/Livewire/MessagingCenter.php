@@ -63,6 +63,12 @@ class MessagingCenter extends Component
     public function selectMessage($messageId)
     {
         $this->selectedMessage = Message::with('sender')->find($messageId);
+        
+        // Mark the message as read if the current user is the recipient
+        if ($this->selectedMessage && $this->selectedMessage->recipient_id === auth()->id() && !$this->selectedMessage->is_read) {
+            $this->selectedMessage->update(['is_read' => true]);
+            $this->loadMessages(); // Reload messages to update the UI
+        }
     }
 
     public function selectConversation($userId)
@@ -79,12 +85,21 @@ class MessagingCenter extends Component
           ->orderBy('created_at', 'asc')
           ->get();
         
+        // Mark all unread messages in this conversation as read
+        Message::where('recipient_id', $user->id)
+            ->where('sender_id', $userId)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+        
         $otherUser = User::find($userId);
         
         $this->selectedConversation = [
             'other_user' => $otherUser,
             'messages' => $messages
         ];
+        
+        // Reload messages to update the UI
+        $this->loadMessages();
     }
 
     public function replyToTrainerRequest($trainerEmail)
@@ -110,10 +125,19 @@ class MessagingCenter extends Component
           ->orderBy('created_at', 'asc')
           ->get();
         
+        // Mark all unread messages in this conversation as read
+        Message::where('recipient_id', $user->id)
+            ->where('sender_id', $trainer->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+        
         $this->selectedConversation = [
             'other_user' => $trainer,
             'messages' => $messages
         ];
+        
+        // Reload messages to update the UI
+        $this->loadMessages();
     }
 
     public function sendMessage()
@@ -138,6 +162,10 @@ class MessagingCenter extends Component
             $this->reset('newMessage');
             $this->loadMessages();
             session()->flash('message', 'Message sent successfully!');
+            
+            // Emit event to update unread message badges
+            $this->dispatch('message-sent');
+            
         } catch (\Exception $e) {
             session()->flash('error', 'An error occurred while sending the message.');
         }
@@ -224,6 +252,11 @@ class MessagingCenter extends Component
     public function setActiveTab($tab)
     {
         $this->activeTab = $tab;
+    }
+
+    public function closeConversation()
+    {
+        $this->selectedConversation = null;
     }
 
     public function render()

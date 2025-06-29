@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('owner')->nullable();
+            $table->boolean('owner')->default(false);
             $table->boolean('is_trainer')->default(false);
             $table->foreignId('my_trainer')->nullable()->constrained('users')->onDelete('set null');
         });

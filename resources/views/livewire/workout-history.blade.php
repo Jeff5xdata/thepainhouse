@@ -64,43 +64,76 @@
                                                 {{ number_format($session->total_volume) }} lb
                                             </p>
                                             <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                {{ $session->exerciseSets->count() }} exercises
+                                                {{ $session->exerciseSets->count() }} sets
                                             </p>
                                         </div>
                                     </div>
 
-                                    <!-- Exercises -->
-                                    <div class="space-y-2">
-                                        @foreach($session->exerciseSets->groupBy('exercise_id')->take(3) as $exerciseSets)
-                                            <div class="flex items-start">
-                                                <div class="flex-1 min-w-0">
-                                                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                    <!-- Exercises with Individual Sets -->
+                                    <div class="space-y-4">
+                                        @foreach($session->exerciseSets->groupBy('exercise_id') as $exerciseSets)
+                                            <div class="border-t border-gray-200 dark:border-gray-700 pt-3">
+                                                <div class="mb-2">
+                                                    <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                         {{ $exerciseSets->first()->exercise->name }}
-                                                    </p>
-                                                    @php
-                                                        $sets = $exerciseSets->where('is_warmup', false);
-                                                        $maxWeight = $sets->max('weight');
-                                                        $totalReps = $sets->sum('reps');
-                                                    @endphp
-                                                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                        {{ $sets->count() }} sets • {{ $totalReps }} reps • Max: {{ $maxWeight }} lb
-                                                    </p>
+                                                    </h4>
                                                 </div>
+                                                
+                                                <!-- Warmup Sets -->
+                                                @php
+                                                    $warmupSets = $exerciseSets->where('is_warmup', true)->sortBy('set_number');
+                                                    $workingSets = $exerciseSets->where('is_warmup', false)->sortBy('set_number');
+                                                @endphp
+                                                
+                                                @if($warmupSets->count() > 0)
+                                                    <div class="mb-2">
+                                                        <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Warmup Sets</p>
+                                                        <div class="space-y-1">
+                                                            @foreach($warmupSets as $set)
+                                                                <div class="flex justify-between text-xs">
+                                                                    <span class="text-gray-600 dark:text-gray-400">Set {{ $set->set_number }}</span>
+                                                                    <span class="text-gray-900 dark:text-gray-100">
+                                                                        @if($set->time_in_seconds)
+                                                                            {{ $set->time_in_seconds }}s
+                                                                        @else
+                                                                            {{ $set->weight }} lb × {{ $set->reps }} reps
+                                                                        @endif
+                                                                    </span>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                                
+                                                <!-- Working Sets -->
+                                                @if($workingSets->count() > 0)
+                                                    <div>
+                                                        <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Working Sets</p>
+                                                        <div class="space-y-1">
+                                                            @foreach($workingSets as $set)
+                                                                <div class="flex justify-between text-xs">
+                                                                    <span class="text-gray-600 dark:text-gray-400">Set {{ $set->set_number }}</span>
+                                                                    <span class="text-gray-900 dark:text-gray-100">
+                                                                        @if($set->time_in_seconds)
+                                                                            {{ $set->time_in_seconds }}s
+                                                                        @else
+                                                                            {{ $set->weight }} lb × {{ $set->reps }} reps
+                                                                        @endif
+                                                                    </span>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                                
+                                                @if($exerciseSets->first()->notes)
+                                                    <div class="mt-2 text-xs text-gray-600 dark:text-gray-400 italic">
+                                                        {{ $exerciseSets->first()->notes }}
+                                                    </div>
+                                                @endif
                                             </div>
                                         @endforeach
-                                        @if($session->exerciseSets->groupBy('exercise_id')->count() > 3)
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                +{{ $session->exerciseSets->groupBy('exercise_id')->count() - 3 }} more exercises
-                                            </p>
-                                        @endif
                                     </div>
-
-                                    <!-- Notes -->
-                                    @if($session->notes)
-                                        <div class="text-xs text-gray-600 dark:text-gray-400 italic">
-                                            {{ Str::limit($session->notes, 100) }}
-                                        </div>
-                                    @endif
 
                                     <!-- Actions -->
                                     <div class="flex space-x-3 pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -142,10 +175,7 @@
                                     Workout Plan
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Exercises
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                    Notes
+                                    Exercises & Sets
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                     Total Volume
@@ -165,33 +195,70 @@
                                         {{ $session->workoutPlan->name }}
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                        <div class="flex flex-col space-y-3">
+                                        <div class="space-y-4">
                                             @foreach($session->exerciseSets->groupBy('exercise_id') as $exerciseSets)
-                                                <div class="flex items-start">
-                                                    <div class="flex-1">
-                                                        <div class="flex items-center">
-                                                            <span class="font-medium text-gray-900 dark:text-gray-100">{{ $exerciseSets->first()->exercise->name }}</span>
-                                                            <span class="ml-2 text-sm">
-                                                                @php
-                                                                    $sets = $exerciseSets->where('is_warmup', false);
-                                                                    $maxWeight = $sets->max('weight');
-                                                                    $totalReps = $sets->sum('reps');
-                                                                @endphp
-                                                                {{ $sets->count() }} sets • {{ $totalReps }} reps • Max: {{ $maxWeight }} lb
-                                                            </span>
-                                                        </div>
-                                                        @if($exerciseSets->first()->notes)
-                                                            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400 italic">
-                                                                {{ $exerciseSets->first()->notes }}
-                                                            </p>
-                                                        @endif
+                                                <div class="border-b border-gray-200 dark:border-gray-700 pb-3 last:border-b-0 last:pb-0">
+                                                    <div class="mb-2">
+                                                        <h4 class="font-medium text-gray-900 dark:text-gray-100">
+                                                            {{ $exerciseSets->first()->exercise->name }}
+                                                        </h4>
                                                     </div>
+                                                    
+                                                    @php
+                                                        $warmupSets = $exerciseSets->where('is_warmup', true)->sortBy('set_number');
+                                                        $workingSets = $exerciseSets->where('is_warmup', false)->sortBy('set_number');
+                                                    @endphp
+                                                    
+                                                    <!-- Warmup Sets -->
+                                                    @if($warmupSets->count() > 0)
+                                                        <div class="mb-2">
+                                                            <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Warmup Sets</p>
+                                                            <div class="grid grid-cols-3 gap-2 text-xs">
+                                                                @foreach($warmupSets as $set)
+                                                                    <div class="bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">
+                                                                        <div class="text-gray-600 dark:text-gray-400">Set {{ $set->set_number }}</div>
+                                                                        <div class="text-gray-900 dark:text-gray-100 font-medium">
+                                                                            @if($set->time_in_seconds)
+                                                                                {{ $set->time_in_seconds }}s
+                                                                            @else
+                                                                                {{ $set->weight }} lb × {{ $set->reps }}
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <!-- Working Sets -->
+                                                    @if($workingSets->count() > 0)
+                                                        <div>
+                                                            <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Working Sets</p>
+                                                            <div class="grid grid-cols-3 gap-2 text-xs">
+                                                                @foreach($workingSets as $set)
+                                                                    <div class="bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+                                                                        <div class="text-gray-600 dark:text-gray-400">Set {{ $set->set_number }}</div>
+                                                                        <div class="text-gray-900 dark:text-gray-100 font-medium">
+                                                                            @if($set->time_in_seconds)
+                                                                                {{ $set->time_in_seconds }}s
+                                                                            @else
+                                                                                {{ $set->weight }} lb × {{ $set->reps }}
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    @if($exerciseSets->first()->notes)
+                                                        <div class="mt-2 text-xs text-gray-600 dark:text-gray-400 italic">
+                                                            {{ $exerciseSets->first()->notes }}
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             @endforeach
                                         </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $session->notes ?? '-' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {{ number_format($session->total_volume) }} lb
@@ -211,7 +278,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                                         No workout sessions found.
                                     </td>
                                 </tr>

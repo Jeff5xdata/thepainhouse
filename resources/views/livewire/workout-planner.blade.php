@@ -167,11 +167,87 @@
                                             </div>
                                             
                                             @if($exerciseData['is_time_based'])
-                                            <div>
-                                                <label class="text-xs text-gray-500 dark:text-gray-400">Time (seconds)</label>
-                                                <input type="number" min="1" max="3600"
-                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.time_in_seconds"
-                                                    class="mt-1 block w-full sm:w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                            <div class="space-y-3 sm:space-y-4">
+                                                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
+                                                    <div>
+                                                        <label class="text-xs text-gray-500 dark:text-gray-400">Time (seconds)</label>
+                                                        <input type="number" min="1" max="3600"
+                                                            wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.time_in_seconds"
+                                                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-xs text-gray-500 dark:text-gray-400">Working Sets</label>
+                                                        <div class="flex items-center space-x-2 mt-1">
+                                                            <button type="button" 
+                                                                wire:click="removeSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                                class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
+                                                                {{ ($exerciseData['sets'] ?? 1) <= 1 ? 'disabled' : '' }}>
+                                                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                                                </svg>
+                                                            </button>
+                                                            <span class="text-sm font-medium text-gray-900 dark:text-gray-100 min-w-[2rem] text-center">
+                                                                {{ $exerciseData['sets'] ?? 1 }}
+                                                            </span>
+                                                            <button type="button" 
+                                                                wire:click="addSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                                class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                                                                <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-xs text-gray-500 dark:text-gray-400">Default Reps</label>
+                                                        <input type="number" min="1" max="100"
+                                                            wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.reps"
+                                                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                    </div>
+                                                    <div>
+                                                        <label class="text-xs text-gray-500 dark:text-gray-400">Default Weight</label>
+                                                        <input type="number" min="0" step="0.5"
+                                                            wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.weight"
+                                                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Individual Sets Display for Time-based Exercises -->
+                                                @if(isset($exerciseData['set_details']) && count($exerciseData['set_details']) > 0)
+                                                <div class="mt-4">
+                                                    <h6 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Individual Sets</h6>
+                                                    <div class="space-y-2">
+                                                        @foreach($exerciseData['set_details'] as $setIndex => $set)
+                                                        <div class="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                                                            <span class="text-xs text-gray-500 dark:text-gray-400 w-8">
+                                                                Set {{ $set['set_number'] }}
+                                                                @if($set['is_warmup'])
+                                                                    <span class="text-orange-500">(W)</span>
+                                                                @endif
+                                                            </span>
+                                                            <div class="flex-1 flex space-x-2">
+                                                                <input type="number" min="1" max="3600"
+                                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.time_in_seconds"
+                                                                    class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
+                                                                    placeholder="Time">
+                                                                <input type="number" min="1" max="100"
+                                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.reps"
+                                                                    class="w-16 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
+                                                                    placeholder="Reps">
+                                                                <input type="number" min="0" step="0.5"
+                                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.weight"
+                                                                    class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
+                                                                    placeholder="Weight">
+                                                            </div>
+                                                            <input type="text"
+                                                                wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.notes"
+                                                                class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
+                                                                placeholder="Notes">
+                                                        </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                                @endif
                                             </div>
                                             @else
                                             <div class="space-y-3 sm:space-y-4">
@@ -226,14 +302,6 @@
                                                                     <span class="text-orange-500">(W)</span>
                                                                 @endif
                                                             </span>
-                                                            @if($exerciseData['is_time_based'])
-                                                            <div class="flex-1">
-                                                                <input type="number" min="1" max="3600"
-                                                                    wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.time_in_seconds"
-                                                                    class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
-                                                                    placeholder="Time">
-                                                            </div>
-                                                            @else
                                                             <div class="flex-1 flex space-x-2">
                                                                 <input type="number" min="1" max="100"
                                                                     wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.reps"
@@ -244,7 +312,6 @@
                                                                     class="w-20 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
                                                                     placeholder="Weight">
                                                             </div>
-                                                            @endif
                                                             <input type="text"
                                                                 wire:model.live="schedule.{{ $currentWeek }}.{{ $currentDay }}.{{ $index }}.set_details.{{ $setIndex }}.notes"
                                                                 class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-xs"
@@ -408,7 +475,7 @@
                                                                     </div>
                                                                     <div class="text-sm text-gray-600 dark:text-gray-400">
                                                                         @if($exercise['is_time_based'])
-                                                                            Duration: {{ $this->formatDuration($exercise['time']) }}
+                                                                            Duration: {{ $this->formatDuration($exercise['time_in_seconds']) }}
                                                                         @else
                                                                             {{ $exercise['sets'] }} sets × {{ $exercise['reps'] }} reps
                                                                         @endif
@@ -417,7 +484,7 @@
                                                                             <span class="text-gray-500 dark:text-gray-500">
                                                                                 Warmup: 
                                                                                 @if($exercise['is_time_based'])
-                                                                                    {{ $this->formatDuration($exercise['warmup_time']) }}
+                                                                                    {{ $this->formatDuration($exercise['warmup_time_in_seconds']) }}
                                                                                 @else
                                                                                     {{ $exercise['warmup_sets'] }} × {{ $exercise['warmup_reps'] }}
                                                                                 @endif

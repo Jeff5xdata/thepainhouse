@@ -56,27 +56,45 @@
                                                 <div class="mb-4 last:mb-0">
                                                     <h5 class="text-md font-medium mb-2 text-gray-800 dark:text-gray-200 capitalize">{{ $day }}</h5>
                                                     <ul class="space-y-2">
-                                                        @php
-                                                            $grouped = $scheduleItems->groupBy('exercise_id');
-                                                        @endphp
-                                                        @foreach($grouped as $exerciseId => $items)
+                                                        @foreach($scheduleItems as $item)
                                                             @php
-                                                                $exercise = $items->first()->exercise;
-                                                                $totalSets = $items->sum('sets');
-                                                                $totalReps = $items->sum('reps');
-                                                                $isTimeBased = $items->first()->is_time_based;
-                                                                $totalTime = $items->sum('time_in_seconds');
+                                                                $exercise = $item->exercise;
+                                                                $setDetails = $item->formatted_set_details;
                                                             @endphp
-                                                            <li class="text-sm text-gray-600 dark:text-gray-300 flex justify-between items-center">
-                                                                <span>{{ $exercise->name }}</span>
-                                                                <span class="text-gray-500 dark:text-gray-400 ml-2">
-                                                                    @if($isTimeBased)
-                                                                        {{ $totalSets }}x{{ $totalTime }}s
-                                                                    @else
-                                                                        {{ $totalSets }}x{{ $totalReps }}
-                                                                    @endif
-                                                                </span>
+                                                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                                            <li class="text-sm text-gray-600 dark:text-gray-300">
+                                                                <div class="flex justify-between items-center ">
+                                                                    <span>{{ $exercise->name }}</span>
+                                                                    <span class="text-gray-500 dark:text-gray-400 ml-2">
+                                                                        @foreach($setDetails as $set)
+                                                                            @if($set['is_warmup'])
+                                                                                <p class="flex justify-between">
+                                                                                    <span class="text-yellow-500 dark:text-yellow-400 ml-2"> Warm Up :&nbsp;{{ $set['reps'] }} reps&nbsp;</span>
+                                                                                </p>
+                                                                            @endif
+                                                                            @if(!$set['is_warmup'])
+                                                                                <p class="flex justify-between">
+                                                                                    @if($set['time_in_seconds'] == null)
+                                                                                        <span> &nbsp; </span>
+                                                                                    @else
+                                                                                        <span>Set {{ $set['set_number'] }} : </span>
+                                                                                    @endif
+                                                                                    @if($item->is_time_based)
+                                                                                        @if($set['time_in_seconds'] == null)
+                                                                                            <span class="text-gray-500 dark:text-gray-400">&nbsp; </span>
+                                                                                        @else
+                                                                                            <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['time_in_seconds'] }}s&nbsp;</span>
+                                                                                        @endif
+                                                                                    @else
+                                                                                        <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['reps'] }} reps&nbsp;</span>
+                                                                                    @endif
+                                                                                </p>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    </span>
+                                                                </div>
                                                             </li>
+                                                        </div>
                                                         @endforeach
                                                     </ul>
                                                 </div>
@@ -99,10 +117,6 @@
                             @foreach($groupedExercises as $exerciseId => $items)
                                 @php
                                     $exercise = $items->first()->exercise;
-                                    $totalSets = $items->sum('sets');
-                                    $totalReps = $items->sum('reps');
-                                    $isTimeBased = $items->first()->is_time_based;
-                                    $totalTime = $items->sum('time_in_seconds');
                                 @endphp
                                 <!-- Exercise Card -->
                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden">
@@ -118,7 +132,7 @@
                                                 <p class="font-medium text-gray-700 dark:text-gray-200 mb-2">Warmup</p>
                                                     <p class="flex justify-between">
                                                         <span>Sets x Reps:</span>
-                                                        <span class="text-gray-500 dark:text-gray-400">{{ $items->first()->warmup_sets }}x{{ $items->first()->warmup_reps }}</span>
+                                                        <span class="text-gray-500 dark:text-gray-400">{{ $items->first()->warmup_sets }}&nbsp;x&nbsp;{{ $items->first()->warmup_reps }}</span>
                                                     </p>
                                                     @if($items->first()->warmup_weight_percentage)
                                                         <p class="flex justify-between">
@@ -129,25 +143,31 @@
                                             @endif
                                             <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                                                 <p class="font-medium text-gray-700 dark:text-gray-200 mb-2">Working Sets</p>
-                                                @if($isTimeBased)
-                                                    <p class="flex justify-between">
-                                                        <span>Sets:</span>
-                                                        <span class="text-gray-500 dark:text-gray-400">{{ $totalSets }}</span>
-                                                    </p>
-                                                    <p class="flex justify-between">
-                                                        <span>Time:</span>
-                                                        <span class="text-gray-500 dark:text-gray-400">{{ $totalTime }} seconds</span>
-                                                    </p>
-                                                @else
-                                                    <p class="flex justify-between">
-                                                        <span>Sets:</span>
-                                                        <span class="text-gray-500 dark:text-gray-400">{{ $totalSets }}</span>
-                                                    </p>
-                                                    <p class="flex justify-between">
-                                                        <span>Reps:</span>
-                                                        <span class="text-gray-500 dark:text-gray-400">{{ $totalReps }}</span>
-                                                    </p>
-                                                @endif
+                                                @foreach($items as $item)
+                                                    @php
+                                                        $setDetails = $item->formatted_set_details;
+                                                    @endphp
+                                                    @foreach($setDetails as $set)
+                                                        @if(!$set['is_warmup'])
+                                                            <p class="flex justify-between">
+                                                                @if($set['time_in_seconds'] == null)
+                                                                    <span> &nbsp; </span>
+                                                                @else
+                                                                    <span>Set {{ $set['set_number'] }}:</span>
+                                                                @endif
+                                                                @if($item->is_time_based)
+                                                                    @if($set['time_in_seconds'] == null)
+                                                                        <span class="text-gray-500 dark:text-gray-400">&nbsp; </span>
+                                                                        @else
+                                                                        <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['time_in_seconds'] }}s&nbsp;</span>
+                                                                    @endif
+                                                                @else
+                                                                    <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['reps'] }} reps&nbsp;</span>
+                                                                @endif
+                                                            </p>
+                                                        @endif
+                                                    @endforeach
+                                                @endforeach
                                             </div>
                                         </div>
                                     </div>

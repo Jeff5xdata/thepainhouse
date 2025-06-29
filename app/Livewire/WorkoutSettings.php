@@ -6,7 +6,7 @@ use App\Models\WorkoutSetting;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.navigation')]
 class WorkoutSettings extends Component
 {
     public $defaultRestTimer = 60;

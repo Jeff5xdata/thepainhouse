@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Auth;
 
-#[Layout('components.layouts.app')]
+#[Layout('layouts.navigation')]
 class ExerciseList extends Component
 {
     use WithPagination;

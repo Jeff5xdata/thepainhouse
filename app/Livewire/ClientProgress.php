@@ -47,7 +47,7 @@ class ClientProgress extends Component
     {
         $this->currentWorkout = $this->client->workoutSessions()
             ->with('workoutPlan')
-            ->where('completed', true)
+            ->whereNotNull('completed_at')
             ->latest()
             ->first();
     }

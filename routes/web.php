@@ -64,7 +64,7 @@ Route::middleware(['auth', 'verified', 'throttle:120,1'])->group(function () {
     Route::get('/trainer/request', TrainerRequestForm::class)->name('trainer.request');
     
     // Messaging Routes
-    Route::get('/messaging', MessagingCenter::class)->name('messaging.center');
+    Route::get('/messaging/{conversation?}', MessagingCenter::class)->name('messaging.center');
     
     // Trainer Dashboard Routes
     Route::get('/trainer/dashboard', TrainerDashboard::class)->name('trainer.dashboard');
