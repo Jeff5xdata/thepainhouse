@@ -91,7 +91,6 @@ The backup file is a JSON file with the following structure:
 ### Database Tables Involved
 
 -   `workout_plans` - Workout plan data
--   `workout_plan_exercises` - Plan-exercise relationships
 -   `workout_plan_schedule` - Exercise schedules
 -   `workout_sessions` - Workout session data
 -   `exercise_sets` - Individual exercise set data

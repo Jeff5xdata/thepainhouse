@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 #[Layout('layouts.navigation')]
 class WorkoutPlanView extends Component
@@ -20,7 +21,7 @@ class WorkoutPlanView extends Component
     public $exercises;
     public $showPrintModal = false;
     public $showCopyModal = false;
-    public $currentWeek = 1;
+    public $currentWeek;
     public $weekSchedule = [];
     public $sourceDay = null;
     public $targetWeek = null;
@@ -30,19 +31,20 @@ class WorkoutPlanView extends Component
     public $isTrainer = false;
 
     public $daysOfWeek = [
-        'monday' => 'Monday',
-        'tuesday' => 'Tuesday',
-        'wednesday' => 'Wednesday',
-        'thursday' => 'Thursday',
-        'friday' => 'Friday',
-        'saturday' => 'Saturday',
-        'sunday' => 'Sunday',
+        1 => 'Monday',
+        2 => 'Tuesday', 
+        3 => 'Wednesday',
+        4 => 'Thursday',
+        5 => 'Friday',
+        6 => 'Saturday',
+        7 => 'Sunday',
     ];
 
     public function mount()
     {
         $this->workoutPlan = WorkoutPlan::where('user_id', auth()->id())->first();
         $this->exercises = Exercise::orderBy('name')->get();
+        $this->currentWeek = Carbon::now()->isoWeek();
         
         // Check if user is a trainer and load clients
         $user = auth()->user();
@@ -277,14 +279,73 @@ class WorkoutPlanView extends Component
 
     public function nextWeek()
     {
-        $this->currentWeek = min(52, $this->currentWeek + 1);
-        $this->loadWeekSchedule();
+        // Find the next week that has data
+        $nextWeek = $this->currentWeek + 1;
+        while ($nextWeek <= 53) { // ISO weeks can go up to 53
+            if ($this->weekHasData($nextWeek)) {
+                $this->currentWeek = $nextWeek;
+                $this->loadWeekSchedule();
+                return;
+            }
+            $nextWeek++;
+        }
     }
 
     public function previousWeek()
     {
-        $this->currentWeek = max(1, $this->currentWeek - 1);
-        $this->loadWeekSchedule();
+        // Find the previous week that has data
+        $prevWeek = $this->currentWeek - 1;
+        while ($prevWeek >= 1) {
+            if ($this->weekHasData($prevWeek)) {
+                $this->currentWeek = $prevWeek;
+                $this->loadWeekSchedule();
+                return;
+            }
+            $prevWeek--;
+        }
+    }
+
+    protected function weekHasData($weekNumber)
+    {
+        if (!$this->workoutPlan) {
+            return false;
+        }
+
+        return WorkoutPlanSchedule::where('workout_plan_id', $this->workoutPlan->id)
+            ->where('week_number', $weekNumber)
+            ->exists();
+    }
+
+    public function hasNextWeek()
+    {
+        if (!$this->workoutPlan) {
+            return false;
+        }
+
+        $nextWeek = $this->currentWeek + 1;
+        while ($nextWeek <= 53) {
+            if ($this->weekHasData($nextWeek)) {
+                return true;
+            }
+            $nextWeek++;
+        }
+        return false;
+    }
+
+    public function hasPreviousWeek()
+    {
+        if (!$this->workoutPlan) {
+            return false;
+        }
+
+        $prevWeek = $this->currentWeek - 1;
+        while ($prevWeek >= 1) {
+            if ($this->weekHasData($prevWeek)) {
+                return true;
+            }
+            $prevWeek--;
+        }
+        return false;
     }
 
     protected function loadWeekSchedule()

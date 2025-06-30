@@ -1,0 +1,12 @@
+{
+    "version": "1.0",
+    "created_at": "2025-06-30T15:40:33.138806Z",
+    "user": {
+        "name": "Nat Cook",
+        "email": "natalie@5xdata.com"
+    },
+    "workout_plans": [],
+    "workout_sessions": [],
+    "exercise_sets": [],
+    "workout_settings": null
+}

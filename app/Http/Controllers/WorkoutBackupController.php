@@ -44,7 +44,7 @@ class WorkoutBackupController extends Controller
                     return [
                         'exercise_id' => $exercise->id,
                         'exercise_name' => $exercise->name,
-                        'pivot' => $exercise->pivot->toArray(),
+                        'pivot' => $exercise->pivot ? $exercise->pivot->toArray() : null,
                     ];
                 })->toArray();
                 $planData['schedule_items'] = $plan->scheduleItems->map(function ($item) {

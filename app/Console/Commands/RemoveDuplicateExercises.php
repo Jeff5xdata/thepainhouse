@@ -180,12 +180,7 @@ class RemoveDuplicateExercises extends Command
             ->where('exercise_id', $exerciseId)
             ->count();
 
-        // Check workout_plan_exercises table
-        $planExercisesCount = DB::table('workout_plan_exercises')
-            ->where('exercise_id', $exerciseId)
-            ->count();
-
-        return $scheduleCount > 0 || $setsCount > 0 || $planExercisesCount > 0;
+        return $scheduleCount > 0 || $setsCount > 0;
     }
 
     /**
@@ -206,12 +201,6 @@ class RemoveDuplicateExercises extends Command
             ->where('exercise_id', $oldExerciseId)
             ->update(['exercise_id' => $newExerciseId]);
         $updatedCount += $setsUpdated;
-
-        // Update workout_plan_exercises table
-        $planExercisesUpdated = DB::table('workout_plan_exercises')
-            ->where('exercise_id', $oldExerciseId)
-            ->update(['exercise_id' => $newExerciseId]);
-        $updatedCount += $planExercisesUpdated;
 
         return $updatedCount;
     }

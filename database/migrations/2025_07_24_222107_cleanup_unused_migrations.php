@@ -31,7 +31,6 @@ return new class extends Migration
      * - workout_plans (Application)
      * - workout_sessions (Application)
      * - exercise_sets (Application)
-     * - workout_plan_exercises (Application)
      * - workout_plan_schedule (Application)
      * - share_links (Application)
      */

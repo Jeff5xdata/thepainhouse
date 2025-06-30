@@ -9,6 +9,7 @@ use Livewire\Component;
 use Livewire\Attributes\Rule;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 #[Layout('layouts.navigation')]
 class WorkoutPlanner extends Component
@@ -25,8 +26,8 @@ class WorkoutPlanner extends Component
     public $schedule = [];
     public $exercises = [];
     public $selectedExercises = [];
-    public $currentDay = 'monday';
-    public $currentWeek = 1;
+    public $currentDay = 1; // Monday = 1
+    public $currentWeek;
     public $search = '';
     public $filteredExercises = [];
     public $showExerciseModal = false;
@@ -45,15 +46,17 @@ class WorkoutPlanner extends Component
     public $editingScheduleItem = null;
     public $showDebug = false;
     public $debugMessage = '';
+    public $oldestWeek = 1;
+    public $newestWeek = 1;
 
     public $daysOfWeek = [
-        'monday' => 'Monday',
-        'tuesday' => 'Tuesday',
-        'wednesday' => 'Wednesday',
-        'thursday' => 'Thursday',
-        'friday' => 'Friday',
-        'saturday' => 'Saturday',
-        'sunday' => 'Sunday'
+        1 => 'Monday',
+        2 => 'Tuesday',
+        3 => 'Wednesday',
+        4 => 'Thursday',
+        5 => 'Friday',
+        6 => 'Saturday',
+        7 => 'Sunday'
     ];
 
     protected $rules = [
@@ -65,27 +68,12 @@ class WorkoutPlanner extends Component
 
     public function mount($week = null, $day = null, $plan_id = null)
     {
-        // Initialize with passed week and day or defaults
-        $this->currentWeek = $week ?? 1;
-        $this->currentDay = $day ?? 'monday';
-
         $this->exercises = Exercise::orderBy('name')->get();
         $this->categories = config('exercises.categories');
         
         if ($plan_id) {
             // Load specific plan for editing
             $this->workoutPlan = WorkoutPlan::with([
-                'exercises' => function($query) {
-                    $query->withPivot([
-                        'default_sets',
-                        'default_reps',
-                        'default_weight',
-                        'has_warmup',
-                        'warmup_sets',
-                        'warmup_reps',
-                        'warmup_weight_percentage'
-                    ]);
-                },
                 'scheduleItems.exercise'
             ])
             ->where('user_id', auth()->id())
@@ -93,17 +81,6 @@ class WorkoutPlanner extends Component
         } else {
             // Find active workout plan
             $this->workoutPlan = WorkoutPlan::with([
-                'exercises' => function($query) {
-                    $query->withPivot([
-                        'default_sets',
-                        'default_reps',
-                        'default_weight',
-                        'has_warmup',
-                        'warmup_sets',
-                        'warmup_reps',
-                        'warmup_weight_percentage'
-                    ]);
-                },
                 'scheduleItems.exercise'
             ])
             ->where('user_id', auth()->id())
@@ -115,8 +92,10 @@ class WorkoutPlanner extends Component
             // Initialize form with existing plan data
             $this->name = $this->workoutPlan->name;
             $this->description = $this->workoutPlan->description;
-            $this->weeks_duration = $this->workoutPlan->weeks_duration;
             $this->loadSchedule();
+            
+            // Calculate week range and duration based on existing data
+            $this->calculateWeekRange();
             
             // Debug: Log the loaded schedule
             \Log::info('Loaded schedule from existing plan', [
@@ -129,13 +108,95 @@ class WorkoutPlanner extends Component
             $this->schedule = [];
             $this->name = '';
             $this->description = '';
-            $this->weeks_duration = 1;
+            
+            // Calculate week range for new plan
+            $this->calculateWeekRangeForNewPlan();
             
             // Debug: Log the empty schedule
             \Log::info('Initialized empty schedule for new plan', [
                 'schedule' => $this->schedule,
             ]);
         }
+
+        // Initialize with passed week and day or defaults
+        $this->currentWeek = $week ?? $this->getDefaultWeek();
+        $this->currentDay = $day ?? Carbon::now()->dayOfWeek; // 1 (Monday) through 7 (Sunday)
+    }
+
+    /**
+     * Calculate the week range based on existing data
+     */
+    protected function calculateWeekRange()
+    {
+        if (empty($this->schedule)) {
+            $this->oldestWeek = Carbon::now()->isoWeek();
+            $this->newestWeek = Carbon::now()->isoWeek();
+            $this->weeks_duration = 1;
+            return;
+        }
+
+        $weekNumbers = array_keys($this->schedule);
+        if (empty($weekNumbers)) {
+            $this->oldestWeek = Carbon::now()->isoWeek();
+            $this->newestWeek = Carbon::now()->isoWeek();
+            $this->weeks_duration = 1;
+            return;
+        }
+
+        $this->oldestWeek = min($weekNumbers);
+        $this->newestWeek = max($weekNumbers);
+        
+        // Calculate weeks_duration from oldest week to current week
+        $currentWeek = Carbon::now()->isoWeek();
+        $this->weeks_duration = max($currentWeek - $this->oldestWeek + 1, 1);
+        
+        \Log::info('Calculated week range', [
+            'oldest_week' => $this->oldestWeek,
+            'newest_week' => $this->newestWeek,
+            'current_week' => $currentWeek,
+            'weeks_duration' => $this->weeks_duration
+        ]);
+    }
+
+    /**
+     * Calculate week range for new plans
+     */
+    protected function calculateWeekRangeForNewPlan()
+    {
+        $currentWeek = Carbon::now()->isoWeek();
+        
+        // For new plans, start from current week
+        $this->oldestWeek = $currentWeek;
+        $this->newestWeek = $currentWeek;
+        $this->weeks_duration = 1;
+        
+        \Log::info('Calculated week range for new plan', [
+            'current_week' => $currentWeek,
+            'weeks_duration' => $this->weeks_duration
+        ]);
+    }
+
+    /**
+     * Get the default week to start with
+     */
+    protected function getDefaultWeek()
+    {
+        if (empty($this->schedule)) {
+            return Carbon::now()->isoWeek();
+        }
+
+        // Use the oldest week in the data
+        return $this->oldestWeek;
+    }
+
+    /**
+     * Get the week range for the view
+     */
+    public function getWeekRange()
+    {
+        $currentWeek = Carbon::now()->isoWeek();
+        $endWeek = max($this->oldestWeek + $this->weeks_duration - 1, $currentWeek);
+        return range($this->oldestWeek, $endWeek);
     }
 
     protected function loadSchedule()
@@ -156,38 +217,70 @@ class WorkoutPlanner extends Component
 
         // Convert schedule items to the format expected by the view
         foreach ($scheduleItems as $item) {
-            if (!isset($this->schedule[$item->week_number])) {
-                $this->schedule[$item->week_number] = [];
-            }
-            if (!isset($this->schedule[$item->week_number][$item->day_of_week])) {
-                $this->schedule[$item->week_number][$item->day_of_week] = [];
+            $setDetails = $item->formatted_set_details;
+            
+            // Extract properties from set_details
+            $hasWarmup = false;
+            $warmupSets = 0;
+            $warmupReps = 10;
+            $warmupTimeInSeconds = null;
+            $sets = 3;
+            $reps = 10;
+            $weight = null;
+            $timeInSeconds = null;
+            
+            if (!empty($setDetails)) {
+                // Count warmup and work sets
+                $warmupSets = 0;
+                $workSets = 0;
+                
+                foreach ($setDetails as $set) {
+                    if ($set['is_warmup'] ?? false) {
+                        $warmupSets++;
+                        if ($warmupSets === 1) {
+                            $warmupReps = $set['reps'] ?? 10;
+                            $warmupTimeInSeconds = $set['time_in_seconds'] ?? null;
+                        }
+                    } else {
+                        $workSets++;
+                        if ($workSets === 1) {
+                            $reps = $set['reps'] ?? 10;
+                            $weight = $set['weight'] ?? null;
+                            $timeInSeconds = $set['time_in_seconds'] ?? null;
+                        }
+                    }
+                }
+                
+                $hasWarmup = $warmupSets > 0;
+                $sets = $workSets;
             }
             
             $exerciseData = [
                 'exercise_id' => $item->exercise_id,
                 'exercise' => $item->exercise,
                 'is_time_based' => $item->is_time_based,
-                'sets' => $item->sets,
-                'reps' => $item->reps,
-                'time_in_seconds' => $item->time_in_seconds,
-                'has_warmup' => $item->has_warmup,
-                'warmup_sets' => $item->warmup_sets,
-                'warmup_reps' => $item->warmup_reps,
-                'warmup_time_in_seconds' => $item->warmup_time_in_seconds,
-                'warmup_weight_percentage' => $item->warmup_weight_percentage,
-                'weight' => $item->weight,
                 'notes' => $item->notes,
-                'set_details' => $item->formatted_set_details
+                'set_details' => $setDetails,
+                'has_warmup' => $hasWarmup,
+                'warmup_sets' => $warmupSets,
+                'warmup_reps' => $warmupReps,
+                'warmup_time_in_seconds' => $warmupTimeInSeconds,
+                'sets' => $sets,
+                'reps' => $reps,
+                'weight' => $weight,
+                'time_in_seconds' => $timeInSeconds,
             ];
             
             $this->schedule[$item->week_number][$item->day_of_week][] = $exerciseData;
         }
         
-        // Ensure all exercises have synchronized sets/reps with JSON
+        // Ensure all exercises have proper set_details
         foreach ($this->schedule as $week => $days) {
             foreach ($days as $day => $exercises) {
                 foreach ($exercises as $index => $exercise) {
-                    $this->syncSetsAndRepsWithJson($week, $day, $index);
+                    if (empty($exercise['set_details'])) {
+                        throw new \Exception("set_details is required but empty for exercise in week {$week}, day {$day}, index {$index}. Please ensure all exercises have properly configured set_details.");
+                    }
                 }
             }
         }
@@ -218,9 +311,17 @@ class WorkoutPlanner extends Component
 
     public function updatedWeeksDuration()
     {
-        // Ensure current week doesn't exceed the new duration
-        if ($this->currentWeek > $this->weeks_duration) {
-            $this->currentWeek = $this->weeks_duration;
+        // Ensure current week doesn't exceed the calculated range
+        $currentWeek = Carbon::now()->isoWeek();
+        $maxWeek = $this->oldestWeek + $this->weeks_duration - 1;
+        
+        if ($this->currentWeek > $maxWeek) {
+            $this->currentWeek = $maxWeek;
+        }
+        
+        // Ensure current week is not less than oldest week
+        if ($this->currentWeek < $this->oldestWeek) {
+            $this->currentWeek = $this->oldestWeek;
         }
     }
 
@@ -262,17 +363,16 @@ class WorkoutPlanner extends Component
             'exercise_id' => $exercise->id,
             'exercise' => $exercise,
             'is_time_based' => false,
-            'sets' => 3,
-            'reps' => 10,
-            'time_in_seconds' => null,
+            'notes' => '',
+            'set_details' => [],
             'has_warmup' => false,
             'warmup_sets' => 2,
             'warmup_reps' => 10,
             'warmup_time_in_seconds' => null,
-            'warmup_weight_percentage' => 50,
+            'sets' => 3,
+            'reps' => 10,
             'weight' => null,
-            'notes' => '',
-            'set_details' => []
+            'time_in_seconds' => null,
         ];
 
         $this->regenerateSetDetails($week, $day, $orderInDay);
@@ -403,58 +503,6 @@ class WorkoutPlanner extends Component
     }
 
     /**
-     * Ensure sets and reps columns are synchronized with JSON set_details
-     */
-    protected function syncSetsAndRepsWithJson($week, $day, $index)
-    {
-        if (!isset($this->schedule[$week][$day][$index])) {
-            return;
-        }
-
-        $exercise = &$this->schedule[$week][$day][$index];
-        
-        // If set_details exists, ensure sets and reps match the JSON structure
-        if (!empty($exercise['set_details'])) {
-            $workSets = 0;
-            $workReps = 0;
-            $warmupSets = 0;
-            $warmupReps = 0;
-            $workTimeInSeconds = null;
-            $warmupTimeInSeconds = null;
-            
-            foreach ($exercise['set_details'] as $set) {
-                if ($set['is_warmup'] ?? false) {
-                    $warmupSets++;
-                    $warmupReps = $set['reps'] ?? 0;
-                    // For time-based exercises, use the time from the first warmup set
-                    if ($exercise['is_time_based'] && $warmupTimeInSeconds === null) {
-                        $warmupTimeInSeconds = $set['time_in_seconds'] ?? null;
-                    }
-                } else {
-                    $workSets++;
-                    $workReps = $set['reps'] ?? 0;
-                    // For time-based exercises, use the time from the first work set
-                    if ($exercise['is_time_based'] && $workTimeInSeconds === null) {
-                        $workTimeInSeconds = $set['time_in_seconds'] ?? null;
-                    }
-                }
-            }
-            
-            // Update the exercise data to match the JSON
-            $exercise['sets'] = $workSets;
-            $exercise['reps'] = $workReps;
-            $exercise['warmup_sets'] = $warmupSets > 0 ? $warmupSets : null;
-            $exercise['warmup_reps'] = $warmupSets > 0 ? $warmupReps : null;
-            
-            // For time-based exercises, sync the time values
-            if ($exercise['is_time_based']) {
-                $exercise['time_in_seconds'] = $workTimeInSeconds;
-                $exercise['warmup_time_in_seconds'] = $warmupTimeInSeconds;
-            }
-        }
-    }
-
-    /**
      * Update both sets/reps columns and regenerate JSON set_details
      */
     public function updateSetsAndReps($week, $day, $index, $sets = null, $reps = null, $warmupSets = null, $warmupReps = null)
@@ -464,20 +512,6 @@ class WorkoutPlanner extends Component
         }
 
         $exercise = &$this->schedule[$week][$day][$index];
-        
-        // Update the values if provided
-        if ($sets !== null) {
-            $exercise['sets'] = $sets;
-        }
-        if ($reps !== null) {
-            $exercise['reps'] = $reps;
-        }
-        if ($warmupSets !== null) {
-            $exercise['warmup_sets'] = $warmupSets;
-        }
-        if ($warmupReps !== null) {
-            $exercise['warmup_reps'] = $warmupReps;
-        }
         
         // Regenerate the JSON to keep it in sync
         $this->regenerateSetDetails($week, $day, $index);
@@ -540,57 +574,29 @@ class WorkoutPlanner extends Component
                 ]);
             }
 
-            // Create or update schedule items
-            if (!empty($this->schedule)) {
-                $scheduleItems = [];
-                
-                foreach ($this->schedule as $week => $days) {
-                    foreach ($days as $day => $exercises) {
-                        foreach ($exercises as $index => $exercise) {
-                            if (empty($exercise['exercise_id'])) {
-                                continue; // Skip if no exercise is selected
-                            }
-                            
-                            // Ensure sets and reps are synchronized with JSON before saving
-                            $this->syncSetsAndRepsWithJson($week, $day, $index);
-                            
-                            $scheduleItems[] = [
-                                'workout_plan_id' => $this->workoutPlan->id,
-                                'exercise_id' => $exercise['exercise_id'],
-                                'week_number' => $week,
-                                'day_of_week' => $day,
-                                'order_in_day' => $index,
-                                'is_time_based' => $exercise['is_time_based'] ?? false,
-                                'sets' => $exercise['sets'] ?? 3,
-                                'reps' => $exercise['reps'] ?? 10,
-                                'weight' => $exercise['weight'] ?? null,
-                                'time_in_seconds' => $exercise['time_in_seconds'] ?? null,
-                                'notes' => $exercise['notes'] ?? '',
-                                'has_warmup' => $exercise['has_warmup'] ?? false,
-                                'warmup_sets' => $exercise['warmup_sets'] ?? null,
-                                'warmup_reps' => $exercise['warmup_reps'] ?? null,
-                                'warmup_time_in_seconds' => $exercise['warmup_time_in_seconds'] ?? null,
-                                'warmup_weight_percentage' => $exercise['warmup_weight_percentage'] ?? null,
-                                'set_details' => !empty($exercise['set_details']) ? json_encode($exercise['set_details']) : null,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ];
+            // Save schedule items
+            foreach ($this->schedule as $week => $days) {
+                foreach ($days as $day => $exercises) {
+                    foreach ($exercises as $index => $exercise) {
+                        // Ensure set_details is properly formatted
+                        if (empty($exercise['set_details'])) {
+                            throw new \Exception("set_details is required but empty for exercise in week {$week}, day {$day}, index {$index}. Please ensure all exercises have properly configured set_details.");
                         }
+
+                        WorkoutPlanSchedule::create([
+                            'workout_plan_id' => $this->workoutPlan->id,
+                            'exercise_id' => $exercise['exercise_id'],
+                            'week_number' => $week,
+                            'day_of_week' => $day,
+                            'order_in_day' => $index + 1,
+                            'is_time_based' => $exercise['is_time_based'] ?? false,
+                            'notes' => $exercise['notes'] ?? '',
+                            'set_details' => json_encode($exercise['set_details']),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
                     }
                 }
-
-                // Debug: Log the schedule items being inserted
-                \Log::info('Schedule items to insert', [
-                    'count' => count($scheduleItems),
-                    'items' => $scheduleItems
-                ]);
-
-                // Batch insert all schedule items
-                if (!empty($scheduleItems)) {
-                    WorkoutPlanSchedule::insert($scheduleItems);
-                }
-            } else {
-                \Log::warning('No schedule data to save');
             }
 
             DB::commit();

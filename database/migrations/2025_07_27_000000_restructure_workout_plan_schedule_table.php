@@ -28,18 +28,8 @@ return new class extends Migration
                 $table->integer('week_number')->default(1);
                 $table->string('day_of_week');
                 $table->integer('order_in_day')->default(0);
-                $table->boolean('is_time_based')->default(false);
-                $table->integer('sets')->default(3);
-                $table->integer('reps')->default(10);
-                $table->decimal('weight', 8, 2)->nullable();
-                $table->integer('time_in_seconds')->nullable();
                 $table->text('notes')->nullable();
-                $table->boolean('has_warmup')->default(false);
-                $table->integer('warmup_sets')->nullable();
-                $table->integer('warmup_reps')->nullable();
-                $table->integer('warmup_time_in_seconds')->nullable();
-                $table->integer('warmup_weight_percentage')->nullable();
-                $table->json('set_details')->nullable();
+                $table->boolean('complete')->default(false);
                 $table->timestamps();
             });
 
@@ -58,17 +48,6 @@ return new class extends Migration
             $table->integer('week_number')->default(1);
             $table->string('day_of_week');
             $table->integer('order_in_day')->default(0);
-            $table->boolean('is_time_based')->default(false);
-            $table->integer('sets')->default(3);
-            $table->integer('reps')->default(10);
-            $table->decimal('weight', 8, 2)->nullable();
-            $table->integer('time_in_seconds')->nullable();
-            $table->text('notes')->nullable();
-            $table->boolean('has_warmup')->default(false);
-            $table->integer('warmup_sets')->nullable();
-            $table->integer('warmup_reps')->nullable();
-            $table->integer('warmup_time_in_seconds')->nullable();
-            $table->integer('warmup_weight_percentage')->nullable();
             $table->json('set_details')->nullable(); // Store individual set details as JSON
             $table->timestamps();
 
@@ -76,8 +55,8 @@ return new class extends Migration
             $table->unique(['workout_plan_id', 'week_number', 'day_of_week', 'order_in_day'], 'unique_exercise_order');
             
             // Add indexes for performance
-            $table->index(['workout_plan_id', 'week_number', 'day_of_week']);
-            $table->index(['exercise_id']);
+            $table->index(['workout_plan_id', 'week_number', 'day_of_week'], 'wps_wpid_wn_dow_idx');
+            $table->index(['exercise_id'], 'wps_exercise_id_idx');
         });
 
         // Migrate data from backup to new structure if we had data
@@ -113,35 +92,13 @@ return new class extends Migration
                 'week_number',
                 'day_of_week',
                 'order_in_day',
-                'is_time_based',
-                'sets',
-                'reps',
-                'weight',
-                'time_in_seconds',
-                'notes',
-                'has_warmup',
-                'warmup_sets',
-                'warmup_reps',
-                'warmup_time_in_seconds',
-                'warmup_weight_percentage'
             ])
             ->groupBy([
                 'workout_plan_id',
                 'exercise_id',
                 'week_number',
                 'day_of_week',
-                'order_in_day',
-                'is_time_based',
-                'sets',
-                'reps',
-                'weight',
-                'time_in_seconds',
-                'notes',
-                'has_warmup',
-                'warmup_sets',
-                'warmup_reps',
-                'warmup_time_in_seconds',
-                'warmup_weight_percentage'
+                'order_in_day'
             ])
             ->get();
 
@@ -153,16 +110,16 @@ return new class extends Migration
                 ->where('week_number', $exercise->week_number)
                 ->where('day_of_week', $exercise->day_of_week)
                 ->where('order_in_day', $exercise->order_in_day)
-                ->orderBy('id')
+                ->orderBy('set_number')
                 ->get()
                 ->map(function ($set) {
                     return [
-                        'set_number' => $set->id, // Use ID as set number for now
+                        'set_number' => $set->set_number,
                         'reps' => $set->reps,
                         'weight' => $set->weight,
                         'notes' => $set->notes,
                         'time_in_seconds' => $set->time_in_seconds,
-                        'is_warmup' => false, // Default to false, will be calculated
+                        'is_warmup' => $set->has_warmup && $set->set_number <= $set->warmup_sets,
                     ];
                 })
                 ->toArray();
@@ -174,17 +131,6 @@ return new class extends Migration
                 'week_number' => $exercise->week_number,
                 'day_of_week' => $exercise->day_of_week,
                 'order_in_day' => $exercise->order_in_day,
-                'is_time_based' => $exercise->is_time_based,
-                'sets' => $exercise->sets,
-                'reps' => $exercise->reps,
-                'weight' => $exercise->weight,
-                'time_in_seconds' => $exercise->time_in_seconds,
-                'notes' => $exercise->notes,
-                'has_warmup' => $exercise->has_warmup,
-                'warmup_sets' => $exercise->warmup_sets,
-                'warmup_reps' => $exercise->warmup_reps,
-                'warmup_time_in_seconds' => $exercise->warmup_time_in_seconds,
-                'warmup_weight_percentage' => $exercise->warmup_weight_percentage,
                 'set_details' => !empty($setDetails) ? json_encode($setDetails) : null,
                 'created_at' => now(),
                 'updated_at' => now(),

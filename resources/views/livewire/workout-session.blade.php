@@ -1,5 +1,27 @@
 <div class="py-4 sm:py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        @if(!$workoutPlan)
+            <div class="bg-red-50 dark:bg-red-900/50 border-l-4 border-red-400 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800 dark:text-red-200">
+                            No workout plan found
+                        </h3>
+                        <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+                            <p>You need to create a workout plan before you can start a workout session.</p>
+                            <a href="{{ route('workout.planner') }}" class="inline-flex items-center justify-center mt-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                                Create Workout Plan
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @else
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-4 sm:p-6">
                 <!-- Header -->
@@ -12,7 +34,12 @@
                                 Update Workout
                             @endif
                         </h2>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Week {{ $currentWeek }} - {{ $currentDay }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">ISO Week {{ $currentWeek }} - {{ $this->getDayName($currentDay) }}</p>
+                        @if($currentWeek > 1 && $isNewSession)
+                            <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                                Showing ISO Week {{ $currentWeek }} exercises (no exercises scheduled for current week)
+                            </p>
+                        @endif
                     </div>
                     <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                         <span class="text-gray-600 dark:text-gray-400 text-sm sm:text-base">{{ $sessionDate }}</span>
@@ -45,53 +72,9 @@
                     </div>
                 </div>
 
-                <!-- Exercise Completion Modal -->
-                @if($showNotesModal)
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
-                    <div class="bg-white dark:bg-gray-800 rounded-lg px-4 sm:px-6 py-6 mx-4 max-w-md w-full">
-                        <div class="mb-4">
-                            <h3 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                                Complete Exercise
-                                @if($currentExerciseId)
-                                    @php
-                                        $exercise = $todayExercises->firstWhere('exercise_id', $currentExerciseId);
-                                    @endphp
-                                    @if($exercise)
-                                        <span class="text-base sm:text-lg text-indigo-600 dark:text-indigo-400 block mt-1">{{ $exercise->exercise->name }}</span>
-                                    @endif
-                                @endif
-                            </h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Add any notes about your performance or how you felt during this exercise.</p>
-                        </div>
-                        <div class="mb-4">
-                            <textarea
-                                wire:model="exerciseNotes"
-                                rows="4"
-                                class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                placeholder="Enter your notes here..."
-                            ></textarea>
-                        </div>
-                        <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
-                            <button
-                                wire:click="closeNotesModal"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 order-2 sm:order-1"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                wire:click="saveExerciseCompletion"
-                                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 order-1 sm:order-2"
-                            >
-                                Complete Exercise
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
                 @if($isNewSession)
                     <!-- NEW SESSION FORM -->
-                    @if(count($todayExercises) > 0)
+                    @if($todayExercises && count($todayExercises) > 0)
                         <form wire:submit.prevent="completeWorkout" class="space-y-6">
                             @if ($errors->any())
                                 <div class="bg-red-50 dark:bg-red-900/50 border-l-4 border-red-400 p-4 mb-6">
@@ -132,24 +115,17 @@
                             <div class="grid gap-6">
                                 @foreach($todayExercises as $scheduleItem)
                                     @php
-                                        // Check if there's a completed workout session for today with this exercise
-                                        $isCompleted = \App\Models\WorkoutSession::where('workout_plan_id', $workoutPlan->id)
-                                            ->where('user_id', auth()->id())
-                                            ->whereDate('date', now()->format('Y-m-d'))
-                                            ->where('status', 'completed')
-                                            ->whereHas('exerciseSets', function($query) use ($scheduleItem) {
-                                                $query->where('exercise_id', $scheduleItem->exercise_id);
-                                            })
-                                            ->exists();
+                                        // Check if this exercise is completed using the component property
+                                        $isCompleted = $exerciseCompletionStatus[$scheduleItem->exercise_id] ?? false;
                                     @endphp
-                                    <div class="rounded-lg shadow-sm border dark:border-gray-700 p-4 sm:p-6 transition-colors duration-200 {{ $isCompleted ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-white dark:bg-gray-800' }}">
+                                    <div class="rounded-lg shadow-sm border dark:border-gray-700 p-4 sm:p-6 transition-colors duration-200 {{ $isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-white dark:bg-gray-800' }}">
                                         <!-- Exercise Header -->
                                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 sm:mb-6 space-y-3 sm:space-y-0">
                                             <div class="flex-1">
                                                 <h3 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                                                     {{ $scheduleItem->exercise->name }}
                                                     @if($isCompleted)
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 ml-2">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ml-2">
                                                             Completed
                                                         </span>
                                                     @endif
@@ -180,45 +156,61 @@
                                         </div>
 
                                         <!-- Warmup Sets Section -->
-                                        @if($scheduleItem->has_warmup)
+                                        @php
+                                            $setDetails = $this->getSetDetails($scheduleItem);
+                                            $hasWarmup = !empty($setDetails['warmup_sets']);
+                                        @endphp
+                                        @if($hasWarmup)
                                             <div class="mb-4 sm:mb-6">
                                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 space-y-2 sm:space-y-0">
                                                     <h4 class="text-base sm:text-lg font-semibold text-yellow-600 dark:text-yellow-400">Warmup Sets</h4>
                                                     <button type="button" 
                                                         wire:click="toggleProgress({{ $scheduleItem->exercise_id }})"
                                                         class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 self-start sm:self-auto">
-                                                        {{ $showProgress[$scheduleItem->exercise_id] ?? false ? 'Hide' : 'Show' }} Summary
+                                                        {{ $showProgress[$scheduleItem->exercise_id] ?? false ? 'Hide' : 'Show' }} History
                                                     </button>
                                                 </div>
                                                 
                                                 @if($showProgress[$scheduleItem->exercise_id] ?? false)
+                                                    @php
+                                                        $exerciseHistory = $this->getExerciseHistory($scheduleItem->exercise_id);
+                                                    @endphp
                                                     <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 sm:p-4 mb-4">
-                                                        <div class="grid grid-cols-3 gap-2 sm:gap-4 text-sm">
-                                                            <div class="text-center">
-                                                                <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Sets</span>
-                                                                <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">{{ $scheduleItem->warmup_sets }}</span>
+                                                        @if(!empty($exerciseHistory))
+                                                            <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent History</h5>
+                                                            <div class="space-y-2">
+                                                                @foreach($exerciseHistory as $session)
+                                                                    <div class="flex justify-between items-center text-sm">
+                                                                        <span class="text-gray-600 dark:text-gray-400">{{ $session['date'] }}</span>
+                                                                        <span class="font-medium text-gray-900 dark:text-gray-100">
+                                                                            @if($session['is_time_based'])
+                                                                                {{ $session['time_in_seconds'] }}s
+                                                                            @else
+                                                                                {{ number_format($session['weight'], 1) }} lb × {{ $session['reps'] }} reps
+                                                                            @endif
+                                                                        </span>
+                                                                    </div>
+                                                                @endforeach
                                                             </div>
-                                                            <div class="text-center">
-                                                                <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Reps</span>
-                                                                <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">{{ $scheduleItem->warmup_reps }}</span>
-                                                            </div>
-                                                            <div class="text-center">
-                                                                <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Weight</span>
-                                                                <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">{{ $scheduleItem->warmup_weight_percentage }}%</span>
-                                                            </div>
-                                                        </div>
+                                                        @else
+                                                            <p class="text-sm text-gray-600 dark:text-gray-400">No previous history found for this exercise.</p>
+                                                        @endif
                                                     </div>
                                                 @endif
 
                                                 <!-- Warmup Set Inputs -->
                                                 <div class="space-y-3">
-                                                    @for($i = 1; $i <= $scheduleItem->warmup_sets; $i++)
+                                                    @php
+                                                        $setDetails = $this->getSetDetails($scheduleItem);
+                                                        $warmupSets = $setDetails['warmup_sets'];
+                                                    @endphp
+                                                    @foreach($warmupSets as $index => $set)
                                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                                             <div>
-                                                                <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">Set {{ $i }}</label>
+                                                                <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">Set {{ $set['set_number'] }}</label>
                                                                 <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reps</label>
                                                                 <input type="number"
-                                                                    wire:model="setReps.{{ $scheduleItem->exercise_id }}.warmup.{{ $i }}"
+                                                                    wire:model="setReps.{{ $scheduleItem->exercise_id }}.warmup.{{ $set['set_number'] }}"
                                                                     min="1"
                                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                     placeholder="Reps">
@@ -227,13 +219,13 @@
                                                                 <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">&nbsp;</label>
                                                                 <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Weight (lb)</label>
                                                                 <input type="number"
-                                                                    wire:model="setWeights.{{ $scheduleItem->exercise_id }}.warmup.{{ $i }}"
+                                                                    wire:model="setWeights.{{ $scheduleItem->exercise_id }}.warmup.{{ $set['set_number'] }}"
                                                                     step="0.5"
                                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                     placeholder="Weight">
                                                             </div>
                                                         </div>
-                                                    @endfor
+                                                    @endforeach
                                                 </div>
                                             </div>
                                         @endif
@@ -245,43 +237,47 @@
                                                 <button type="button" 
                                                     wire:click="toggleProgress({{ $scheduleItem->exercise_id }})"
                                                     class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 self-start sm:self-auto">
-                                                    {{ $showProgress[$scheduleItem->exercise_id] ?? false ? 'Hide' : 'Show' }} Summary
+                                                    {{ $showProgress[$scheduleItem->exercise_id] ?? false ? 'Hide' : 'Show' }} History
                                                 </button>
                                             </div>
                                             
                                             @if($showProgress[$scheduleItem->exercise_id] ?? false)
+                                                @php
+                                                    $exerciseHistory = $this->getExerciseHistory($scheduleItem->exercise_id);
+                                                @endphp
                                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-4 mb-4">
-                                                    <div class="grid grid-cols-2 gap-2 sm:gap-4 text-sm">
-                                                        <div class="text-center">
-                                                            <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Sets</span>
-                                                            <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">{{ $scheduleItem->sets }}</span>
+                                                    @if(!empty($exerciseHistory))
+                                                        <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent History</h5>
+                                                        <div class="space-y-2">
+                                                            @foreach($exerciseHistory as $session)
+                                                                <div class="flex justify-between items-center text-sm">
+                                                                    <span class="text-gray-600 dark:text-gray-400">{{ $session['date'] }}</span>
+                                                                    <span class="font-medium text-gray-900 dark:text-gray-100">
+                                                                        @if($session['is_time_based'])
+                                                                            {{ $session['time_in_seconds'] }}s
+                                                                        @else
+                                                                            {{ number_format($session['weight'], 1) }} lb × {{ $session['reps'] }} reps
+                                                                        @endif
+                                                                    </span>
+                                                                </div>
+                                                            @endforeach
                                                         </div>
-                                                        <div class="text-center">
-                                                            <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">
-                                                                @if($scheduleItem->is_time_based)
-                                                                    Time
-                                                                @else
-                                                                    Reps
-                                                                @endif
-                                                            </span>
-                                                            <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
-                                                                @if($scheduleItem->is_time_based)
-                                                                    {{ $scheduleItem->time_in_seconds }}s
-                                                                @else
-                                                                    {{ $scheduleItem->reps }}
-                                                                @endif
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                                                    @else
+                                                        <p class="text-sm text-gray-600 dark:text-gray-400">No previous history found for this exercise.</p>
+                                                    @endif
                                                 </div>
                                             @endif
 
                                             <!-- Working Set Inputs -->
                                             <div class="space-y-3 sm:space-y-4">
-                                                @for($i = 1; $i <= $scheduleItem->sets; $i++)
+                                                @php
+                                                    $setDetails = $this->getSetDetails($scheduleItem);
+                                                    $workingSets = $setDetails['working_sets'];
+                                                @endphp
+                                                @foreach($workingSets as $index => $set)
                                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                                         <div>
-                                                            <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">Set {{ $i }}</label>
+                                                            <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">Set {{ $set['set_number'] }}</label>
                                                             <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                                 @if($scheduleItem->is_time_based)
                                                                     Time (seconds)
@@ -290,7 +286,7 @@
                                                                 @endif
                                                             </label>
                                                             <input type="number"
-                                                                wire:model="setReps.{{ $scheduleItem->exercise_id }}.working.{{ $i }}"
+                                                                wire:model="setReps.{{ $scheduleItem->exercise_id }}.working.{{ $set['set_number'] }}"
                                                                 min="1"
                                                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                 placeholder="{{ $scheduleItem->is_time_based ? 'Time in seconds' : 'Reps' }}">
@@ -306,19 +302,19 @@
                                                             </label>
                                                             @if($scheduleItem->is_time_based)
                                                                 <input type="text"
-                                                                    wire:model="setNotes.{{ $scheduleItem->exercise_id }}.working.{{ $i }}"
+                                                                    wire:model="setNotes.{{ $scheduleItem->exercise_id }}.working.{{ $set['set_number'] }}"
                                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                     placeholder="Notes">
                                                             @else
                                                                 <input type="number"
-                                                                    wire:model="setWeights.{{ $scheduleItem->exercise_id }}.working.{{ $i }}"
+                                                                    wire:model="setWeights.{{ $scheduleItem->exercise_id }}.working.{{ $set['set_number'] }}"
                                                                     step="0.5"
                                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                     placeholder="Weight">
                                                             @endif
                                                         </div>
                                                     </div>
-                                                @endfor
+                                                @endforeach
                                             </div>
                                         </div>
 
@@ -375,7 +371,7 @@
                                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No exercises scheduled</h3>
                                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a workout plan</p>
                             </div>
-                            <a href="{{ route('workout.planner', ['week' => $currentWeek, 'day' => strtolower($currentDay)]) }}" class="inline-flex items-center justify-center px-4 sm:px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800 w-full sm:w-auto">
+                            <a href="{{ route('workout.planner', ['week' => $currentWeek, 'day' => $currentDay]) }}" class="inline-flex items-center justify-center px-4 sm:px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800 w-full sm:w-auto">
                                 <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                                 </svg>
@@ -385,7 +381,7 @@
                     @endif
                 @else
                     <!-- EXISTING SESSION EDIT FORM -->
-                    @if(count($todayExercises) > 0)
+                    @if($todayExercises && count($todayExercises) > 0)
                         <form wire:submit.prevent="completeWorkout" class="space-y-6">
                             @if ($errors->any())
                                 <div class="bg-red-50 dark:bg-red-900/50 border-l-4 border-red-400 p-4 mb-6">
@@ -414,15 +410,8 @@
                             <div class="grid gap-6">
                                 @foreach($todayExercises as $scheduleItem)
                                     @php
-                                        // Check if there's a completed workout session for today with this exercise
-                                        $isCompleted = \App\Models\WorkoutSession::where('workout_plan_id', $workoutPlan->id)
-                                            ->where('user_id', auth()->id())
-                                            ->whereDate('date', now()->format('Y-m-d'))
-                                            ->where('status', 'completed')
-                                            ->whereHas('exerciseSets', function($query) use ($scheduleItem) {
-                                                $query->where('exercise_id', $scheduleItem->exercise_id);
-                                            })
-                                            ->exists();
+                                        // Check if this exercise is completed using the component property
+                                        $isCompleted = $exerciseCompletionStatus[$scheduleItem->exercise_id] ?? false;
                                     @endphp
                                     <div class="rounded-lg shadow-sm border dark:border-gray-700 p-4 sm:p-6 transition-colors duration-200 {{ $isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-white dark:bg-gray-800' }}">
                                         <!-- Exercise Header -->
@@ -462,45 +451,61 @@
                                         </div>
 
                                         <!-- Warmup Sets Section -->
-                                        @if($scheduleItem->has_warmup)
+                                        @php
+                                            $setDetails = $this->getSetDetails($scheduleItem);
+                                            $hasWarmup = !empty($setDetails['warmup_sets']);
+                                        @endphp
+                                        @if($hasWarmup)
                                             <div class="mb-4 sm:mb-6">
                                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 space-y-2 sm:space-y-0">
                                                     <h4 class="text-base sm:text-lg font-semibold text-yellow-600 dark:text-yellow-400">Warmup Sets</h4>
                                                     <button type="button" 
                                                         wire:click="toggleProgress({{ $scheduleItem->exercise_id }})"
                                                         class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 self-start sm:self-auto">
-                                                        {{ $showProgress[$scheduleItem->exercise_id] ?? false ? 'Hide' : 'Show' }} Summary
+                                                        {{ $showProgress[$scheduleItem->exercise_id] ?? false ? 'Hide' : 'Show' }} History
                                                     </button>
                                                 </div>
                                                 
                                                 @if($showProgress[$scheduleItem->exercise_id] ?? false)
+                                                    @php
+                                                        $exerciseHistory = $this->getExerciseHistory($scheduleItem->exercise_id);
+                                                    @endphp
                                                     <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 sm:p-4 mb-4">
-                                                        <div class="grid grid-cols-3 gap-2 sm:gap-4 text-sm">
-                                                            <div class="text-center">
-                                                                <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Sets</span>
-                                                                <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">{{ $scheduleItem->warmup_sets }}</span>
+                                                        @if(!empty($exerciseHistory))
+                                                            <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent History</h5>
+                                                            <div class="space-y-2">
+                                                                @foreach($exerciseHistory as $session)
+                                                                    <div class="flex justify-between items-center text-sm">
+                                                                        <span class="text-gray-600 dark:text-gray-400">{{ $session['date'] }}</span>
+                                                                        <span class="font-medium text-gray-900 dark:text-gray-100">
+                                                                            @if($session['is_time_based'])
+                                                                                {{ $session['time_in_seconds'] }}s
+                                                                            @else
+                                                                                {{ number_format($session['weight'], 1) }} lb × {{ $session['reps'] }} reps
+                                                                            @endif
+                                                                        </span>
+                                                                    </div>
+                                                                @endforeach
                                                             </div>
-                                                            <div class="text-center">
-                                                                <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Reps</span>
-                                                                <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">{{ $scheduleItem->warmup_reps }}</span>
-                                                            </div>
-                                                            <div class="text-center">
-                                                                <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Weight</span>
-                                                                <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">{{ $scheduleItem->warmup_weight_percentage }}%</span>
-                                                            </div>
-                                                        </div>
+                                                        @else
+                                                            <p class="text-sm text-gray-600 dark:text-gray-400">No previous history found for this exercise.</p>
+                                                        @endif
                                                     </div>
                                                 @endif
 
                                                 <!-- Warmup Set Inputs -->
                                                 <div class="space-y-3">
-                                                    @for($i = 1; $i <= $scheduleItem->warmup_sets; $i++)
+                                                    @php
+                                                        $setDetails = $this->getSetDetails($scheduleItem);
+                                                        $warmupSets = $setDetails['warmup_sets'];
+                                                    @endphp
+                                                    @foreach($warmupSets as $index => $set)
                                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                                             <div>
-                                                                <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">Set {{ $i }}</label>
+                                                                <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">Set {{ $set['set_number'] }}</label>
                                                                 <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reps</label>
                                                                 <input type="number"
-                                                                    wire:model="setReps.{{ $scheduleItem->exercise_id }}.warmup.{{ $i }}"
+                                                                    wire:model="setReps.{{ $scheduleItem->exercise_id }}.warmup.{{ $set['set_number'] }}"
                                                                     min="1"
                                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                     placeholder="Reps">
@@ -509,13 +514,13 @@
                                                                 <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">&nbsp;</label>
                                                                 <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Weight (lb)</label>
                                                                 <input type="number"
-                                                                    wire:model="setWeights.{{ $scheduleItem->exercise_id }}.warmup.{{ $i }}"
+                                                                    wire:model="setWeights.{{ $scheduleItem->exercise_id }}.warmup.{{ $set['set_number'] }}"
                                                                     step="0.5"
                                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                     placeholder="Weight">
                                                             </div>
                                                         </div>
-                                                    @endfor
+                                                    @endforeach
                                                 </div>
                                             </div>
                                         @endif
@@ -527,43 +532,47 @@
                                                 <button type="button" 
                                                     wire:click="toggleProgress({{ $scheduleItem->exercise_id }})"
                                                     class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 self-start sm:self-auto">
-                                                    {{ $showProgress[$scheduleItem->exercise_id] ?? false ? 'Hide' : 'Show' }} Summary
+                                                    {{ $showProgress[$scheduleItem->exercise_id] ?? false ? 'Hide' : 'Show' }} History
                                                 </button>
                                             </div>
                                             
                                             @if($showProgress[$scheduleItem->exercise_id] ?? false)
+                                                @php
+                                                    $exerciseHistory = $this->getExerciseHistory($scheduleItem->exercise_id);
+                                                @endphp
                                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-4 mb-4">
-                                                    <div class="grid grid-cols-2 gap-2 sm:gap-4 text-sm">
-                                                        <div class="text-center">
-                                                            <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">Sets</span>
-                                                            <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">{{ $scheduleItem->sets }}</span>
+                                                    @if(!empty($exerciseHistory))
+                                                        <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recent History</h5>
+                                                        <div class="space-y-2">
+                                                            @foreach($exerciseHistory as $session)
+                                                                <div class="flex justify-between items-center text-sm">
+                                                                    <span class="text-gray-600 dark:text-gray-400">{{ $session['date'] }}</span>
+                                                                    <span class="font-medium text-gray-900 dark:text-gray-100">
+                                                                        @if($session['is_time_based'])
+                                                                            {{ $session['time_in_seconds'] }}s
+                                                                        @else
+                                                                            {{ number_format($session['weight'], 1) }} lb × {{ $session['reps'] }} reps
+                                                                        @endif
+                                                                    </span>
+                                                                </div>
+                                                            @endforeach
                                                         </div>
-                                                        <div class="text-center">
-                                                            <span class="block text-gray-600 dark:text-gray-400 text-xs sm:text-sm">
-                                                                @if($scheduleItem->is_time_based)
-                                                                    Time
-                                                                @else
-                                                                    Reps
-                                                                @endif
-                                                            </span>
-                                                            <span class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
-                                                                @if($scheduleItem->is_time_based)
-                                                                    {{ $scheduleItem->time_in_seconds }}s
-                                                                @else
-                                                                    {{ $scheduleItem->reps }}
-                                                                @endif
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                                                    @else
+                                                        <p class="text-sm text-gray-600 dark:text-gray-400">No previous history found for this exercise.</p>
+                                                    @endif
                                                 </div>
                                             @endif
 
                                             <!-- Working Set Inputs -->
                                             <div class="space-y-3 sm:space-y-4">
-                                                @for($i = 1; $i <= $scheduleItem->sets; $i++)
+                                                @php
+                                                    $setDetails = $this->getSetDetails($scheduleItem);
+                                                    $workingSets = $setDetails['working_sets'];
+                                                @endphp
+                                                @foreach($workingSets as $index => $set)
                                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                                         <div>
-                                                            <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">Set {{ $i }}</label>
+                                                            <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">Set {{ $set['set_number'] }}</label>
                                                             <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                                 @if($scheduleItem->is_time_based)
                                                                     Time (seconds)
@@ -572,7 +581,7 @@
                                                                 @endif
                                                             </label>
                                                             <input type="number"
-                                                                wire:model="setReps.{{ $scheduleItem->exercise_id }}.working.{{ $i }}"
+                                                                wire:model="setReps.{{ $scheduleItem->exercise_id }}.working.{{ $set['set_number'] }}"
                                                                 min="1"
                                                                 class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                 placeholder="{{ $scheduleItem->is_time_based ? 'Time in seconds' : 'Reps' }}">
@@ -588,19 +597,19 @@
                                                             </label>
                                                             @if($scheduleItem->is_time_based)
                                                                 <input type="text"
-                                                                    wire:model="setNotes.{{ $scheduleItem->exercise_id }}.working.{{ $i }}"
+                                                                    wire:model="setNotes.{{ $scheduleItem->exercise_id }}.working.{{ $set['set_number'] }}"
                                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                     placeholder="Notes">
                                                             @else
                                                                 <input type="number"
-                                                                    wire:model="setWeights.{{ $scheduleItem->exercise_id }}.working.{{ $i }}"
+                                                                    wire:model="setWeights.{{ $scheduleItem->exercise_id }}.working.{{ $set['set_number'] }}"
                                                                     step="0.5"
                                                                     class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                                                     placeholder="Weight">
                                                             @endif
                                                         </div>
                                                     </div>
-                                                @endfor
+                                                @endforeach
                                             </div>
                                         </div>
 
@@ -668,6 +677,7 @@
                 @endif
             </div>
         </div>
+        @endif
     </div>
 </div>
 

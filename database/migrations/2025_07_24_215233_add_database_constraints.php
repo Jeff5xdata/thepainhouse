@@ -40,23 +40,6 @@ return new class extends Migration
             // Ensure week_number is positive
             $table->unsignedInteger('week_number')->change();
             
-            // Ensure sets is positive
-            $table->unsignedInteger('sets')->change();
-            
-            // Ensure reps is non-negative
-            $table->unsignedInteger('reps')->nullable()->change();
-            
-            // Ensure time_in_seconds is positive
-            $table->unsignedInteger('time_in_seconds')->nullable()->change();
-            
-            // Ensure warmup_sets is non-negative
-            $table->unsignedInteger('warmup_sets')->nullable()->change();
-            
-            // Ensure warmup_reps is non-negative
-            $table->unsignedInteger('warmup_reps')->nullable()->change();
-            
-            // Ensure warmup_weight_percentage is between 0 and 100
-            $table->unsignedInteger('warmup_weight_percentage')->nullable()->change();
         });
 
         // Add unique constraint to prevent duplicate sessions per user per day

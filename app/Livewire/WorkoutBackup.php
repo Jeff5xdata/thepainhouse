@@ -44,6 +44,28 @@ class WorkoutBackup extends Component
                 'message' => session('error')
             ]);
         }
+
+        // Initialize restore options
+        $this->restoreOptions = [
+            'overwrite_existing' => false,
+            'include_settings' => true,
+            'include_history' => true,
+        ];
+    }
+
+    public function testFileUpload()
+    {
+        if ($this->backupFile) {
+            $this->dispatch('notify', [
+                'type' => 'info',
+                'message' => 'File selected: ' . $this->backupFile->getClientOriginalName() . ' (' . $this->backupFile->getSize() . ' bytes)'
+            ]);
+        } else {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'No file selected'
+            ]);
+        }
     }
 
     public function createBackup()
@@ -56,14 +78,36 @@ class WorkoutBackup extends Component
     {
         $this->validate([
             'backupFile' => 'required|file|mimes:json|max:10240', // 10MB max
+        ], [
+            'backupFile.required' => 'Please select a backup file to upload.',
+            'backupFile.file' => 'The uploaded file is not valid.',
+            'backupFile.mimes' => 'The backup file must be a JSON file.',
+            'backupFile.max' => 'The backup file must not be larger than 10MB.',
         ]);
 
         try {
+            if (!$this->backupFile) {
+                throw new \Exception('No backup file selected');
+            }
+
+            // Debug information
+            $this->dispatch('notify', [
+                'type' => 'info',
+                'message' => 'Processing backup file: ' . $this->backupFile->getClientOriginalName()
+            ]);
+
             $jsonContent = file_get_contents($this->backupFile->getRealPath());
+            if ($jsonContent === false) {
+                throw new \Exception('Failed to read backup file');
+            }
+
             $backupData = json_decode($jsonContent, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
+            }
 
             if (!$backupData || !isset($backupData['version'])) {
-                throw new \Exception('Invalid backup file format');
+                throw new \Exception('Invalid backup file format - missing version information');
             }
 
             $this->restorePreview = [
@@ -78,6 +122,11 @@ class WorkoutBackup extends Component
             ];
 
             $this->showRestoreModal = true;
+
+            $this->dispatch('notify', [
+                'type' => 'success',
+                'message' => 'Backup file processed successfully. Ready to restore.'
+            ]);
 
         } catch (\Exception $e) {
             $this->dispatch('notify', [
@@ -106,6 +155,9 @@ class WorkoutBackup extends Component
                 );
             }
 
+            // Create a mapping of old plan IDs to new plan IDs for session restoration
+            $planIdMapping = [];
+
             // Restore workout plans
             foreach ($backupData['workout_plans'] as $planData) {
                 // Check if plan already exists
@@ -115,6 +167,7 @@ class WorkoutBackup extends Component
 
                 if ($existingPlan && !$this->restoreOptions['overwrite_existing']) {
                     // Skip existing plans if not overwriting
+                    $planIdMapping[$planData['id']] = $existingPlan->id;
                     continue;
                 }
 
@@ -133,6 +186,7 @@ class WorkoutBackup extends Component
                 ];
 
                 $newPlan = WorkoutPlan::create($planCreateData);
+                $planIdMapping[$planData['id']] = $newPlan->id;
 
                 // Restore plan exercises
                 if (!empty($planData['exercises'])) {
@@ -140,7 +194,7 @@ class WorkoutBackup extends Component
                         // Find exercise by name (assuming exercises exist in the system)
                         $exercise = Exercise::where('name', $exerciseData['exercise_name'])->first();
                         
-                        if ($exercise) {
+                        if ($exercise && $exerciseData['pivot']) {
                             $pivotData = $exerciseData['pivot'];
                             unset($pivotData['workout_plan_id'], $pivotData['exercise_id'], $pivotData['created_at'], $pivotData['updated_at']);
                             $newPlan->exercises()->attach($exercise->id, $pivotData);
@@ -168,19 +222,17 @@ class WorkoutBackup extends Component
             // Restore workout sessions and exercise sets if option is enabled
             if ($this->restoreOptions['include_history']) {
                 foreach ($backupData['workout_sessions'] as $sessionData) {
-                    // Find the corresponding workout plan
-                    $plan = WorkoutPlan::where('user_id', $user->id)
-                        ->where('name', $sessionData['workout_plan_name'] ?? 'Unknown Plan')
-                        ->first();
-
-                    if ($plan) {
+                    // Find the corresponding workout plan using the mapping
+                    $newPlanId = $planIdMapping[$sessionData['workout_plan_id']] ?? null;
+                    
+                    if ($newPlanId) {
                         $sessionCreateData = [
                             'user_id' => $user->id,
-                            'workout_plan_id' => $plan->id,
+                            'workout_plan_id' => $newPlanId,
                             'name' => $sessionData['name'] ?? 'Restored Session',
                             'date' => $sessionData['date'],
                             'week_number' => $sessionData['week_number'] ?? 1,
-                            'day_of_week' => $sessionData['day_of_week'] ?? 'monday',
+                            'day_of_week' => $sessionData['day_of_week'] ?? 1,
                             'status' => $sessionData['status'] ?? 'completed',
                             'notes' => $sessionData['notes'] ?? null,
                             'completed_at' => $sessionData['completed_at'] ?? null,

@@ -37,14 +37,19 @@
                                                                 </div>
                                                                 <div class="text-sm text-gray-600 dark:text-gray-400">
                                                                     @foreach($items->sortBy('order_in_day') as $scheduleItem)
+                                                                        @php
+                                                                            $setDetails = $scheduleItem->formatted_set_details;
+                                                                            $warmupSets = collect($setDetails)->where('is_warmup', true);
+                                                                            $workingSets = collect($setDetails)->where('is_warmup', false);
+                                                                        @endphp
                                                                         <div class="mb-1">
-                                                                            @if($scheduleItem->has_warmup)
+                                                                            @if($warmupSets->count() > 0)
                                                                                 <div class="text-yellow-600 dark:text-yellow-400">
-                                                                                    Warmup: {{ $scheduleItem->warmup_sets }}×{{ $scheduleItem->warmup_reps }} @ {{ $scheduleItem->warmup_weight_percentage }}%
+                                                                                    Warmup: {{ $warmupSets->count() }}×{{ $warmupSets->first()['reps'] ?? 0 }} reps
                                                                                 </div>
                                                                             @endif
                                                                             <div>
-                                                                                {{ $scheduleItem->sets }} sets × {{ $scheduleItem->reps }} reps
+                                                                                {{ $workingSets->count() }} sets × {{ $workingSets->first()['reps'] ?? 0 }} reps
                                                                             </div>
                                                                         </div>
                                                                     @endforeach

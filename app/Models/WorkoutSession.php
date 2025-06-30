@@ -68,16 +68,16 @@ class WorkoutSession extends Model
     public function getDayNameAttribute()
     {
         $days = [
-            'monday' => 'Monday',
-            'tuesday' => 'Tuesday',
-            'wednesday' => 'Wednesday',
-            'thursday' => 'Thursday',
-            'friday' => 'Friday',
-            'saturday' => 'Saturday',
-            'sunday' => 'Sunday'
+            1 => 'Monday',
+            2 => 'Tuesday',
+            3 => 'Wednesday',
+            4 => 'Thursday',
+            5 => 'Friday',
+            6 => 'Saturday',
+            7 => 'Sunday'
         ];
 
-        return $days[$this->day_of_week] ?? ucfirst($this->day_of_week);
+        return $days[$this->day_of_week] ?? 'Unknown Day';
     }
 
     public function getTotalVolumeAttribute()

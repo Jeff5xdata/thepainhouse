@@ -26,7 +26,7 @@
                         Print
                     </button>
                     @php
-                        $hasWorkouts = collect($weekSchedule)->flatten(1)->count() > 0;
+                        $hasWorkouts = $workoutPlan && $this->weekHasData($currentWeek);
                     @endphp
                     <a href="{{ $hasWorkouts ? route('workout.session') : route('workout.planner') }}" class="primary-button custom-tooltip" data-tooltip="{{ $hasWorkouts ? 'Begin your workout session' : 'Create a new workout' }}">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -43,58 +43,72 @@
             </div>
 
             <!-- Week Navigation -->
-            <div class="border dark:border-gray-700 rounded-lg p-4 mt-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium dark:text-white">Week {{ $currentWeek }}</h3>
-                    <div class="flex space-x-2">
-                        <button wire:click="previousWeek" class="icon-button dark:text-white" {{ $currentWeek <= 1 ? 'disabled' : '' }}>←</button>
-                        <button wire:click="nextWeek" class="icon-button dark:text-white" {{ $currentWeek >= $workoutPlan->weeks_duration ? 'disabled' : '' }}>→</button>
+            @if($workoutPlan && $this->weekHasData($currentWeek))
+                <div class="border dark:border-gray-700 rounded-lg p-4 mt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium dark:text-white">Week {{ $currentWeek }}</h3>
+                        <div class="flex space-x-2">
+                            <button wire:click="previousWeek" class="icon-button dark:text-white" {{ !$this->hasPreviousWeek() ? 'disabled' : '' }}>←</button>
+                            <button wire:click="nextWeek" class="icon-button dark:text-white" {{ !$this->hasNextWeek() ? 'disabled' : '' }}>→</button>
+                        </div>
                     </div>
-                </div>
-                <div class="space-y-8">
-                    @foreach($daysOfWeek as $day => $dayName)
-                        @if(isset($weekSchedule[$day]) && count($weekSchedule[$day]) > 0)
-                            <div>
-                                <div class="flex justify-between items-center mb-2">
-                                    <h4 class="font-bold dark:text-white">{{ $dayName }}</h4>
-                                    <button wire:click="copyWorkoutModal('{{ $day }}')" class="icon-button custom-tooltip-left dark:text-white" data-tooltip="{{ $isTrainer ? 'Copy this day\'s workout to another day or to a client' : 'Copy this day\'s workout to another day' }}">
-                                        <svg class="h-5 w-5 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div class="space-y-4">
-                                    @foreach(collect($weekSchedule[$day])->groupBy('exercise_id') as $exerciseId => $items)
-                                        <div class="content-card">
-                                            <div class="flex justify-between items-center">
-                                                <h5 class="exercise-title">{{ $items->first()->exercise->name }}</h5>
-                                                <div>
-                                                    <button class="icon-button dark:text-white" wire:click="moveExerciseCard('{{ $day }}', {{ $exerciseId }}, 'up')">↑</button>
-                                                    <button class="icon-button dark:text-white" wire:click="moveExerciseCard('{{ $day }}', {{ $exerciseId }}, 'down')">↓</button>
+                    <div class="space-y-8">
+                        @foreach($daysOfWeek as $day => $dayName)
+                            @if(isset($weekSchedule[$day]) && count($weekSchedule[$day]) > 0)
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h4 class="font-bold dark:text-white">{{ $dayName }}</h4>
+                                        <button wire:click="copyWorkoutModal('{{ $day }}')" class="icon-button custom-tooltip-left dark:text-white" data-tooltip="{{ $isTrainer ? 'Copy this day\'s workout to another day or to a client' : 'Copy this day\'s workout to another day' }}">
+                                            <svg class="h-5 w-5 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="space-y-4">
+                                        @foreach(collect($weekSchedule[$day])->groupBy('exercise_id') as $exerciseId => $items)
+                                            <div class="content-card">
+                                                <div class="flex justify-between items-center">
+                                                    <h5 class="exercise-title">{{ $items->first()->exercise->name }}</h5>
+                                                    <div>
+                                                        <button class="icon-button dark:text-white" wire:click="moveExerciseCard('{{ $day }}', {{ $exerciseId }}, 'up')">↑</button>
+                                                        <button class="icon-button dark:text-white" wire:click="moveExerciseCard('{{ $day }}', {{ $exerciseId }}, 'down')">↓</button>
+                                                    </div>
+                                                </div>
+                                                <div class="exercise-details">
+                                                    @foreach($items->sortBy('order_in_day') as $scheduleItem)
+                                                        @php
+                                                            $setDetails = $scheduleItem->formatted_set_details;
+                                                            $warmupSets = collect($setDetails)->where('is_warmup', true);
+                                                            $workingSets = collect($setDetails)->where('is_warmup', false);
+                                                        @endphp
+                                                        <div class="flex items-center mb-1">
+                                                            @if($warmupSets->count() > 0)
+                                                                <span class="text-yellow-400 mr-2">
+                                                                    Warmup: {{ $warmupSets->count() }}×{{ $warmupSets->first()['reps'] ?? 0 }} reps
+                                                                </span>
+                                                            @endif
+                                                            <span>
+                                                                {{ $workingSets->count() }} sets × {{ $workingSets->first()['reps'] ?? 0 }} reps
+                                                            </span>
+                                                        </div>
+                                                    @endforeach
                                                 </div>
                                             </div>
-                                            <div class="exercise-details">
-                                                @foreach($items->sortBy('order_in_day') as $scheduleItem)
-                                                    <div class="flex items-center mb-1">
-                                                        @if($scheduleItem->has_warmup)
-                                                            <span class="text-yellow-400 mr-2">
-                                                                Warmup: {{ $scheduleItem->warmup_sets }}×{{ $scheduleItem->warmup_reps }} @ {{ $scheduleItem->warmup_weight_percentage }}%
-                                                            </span>
-                                                        @endif
-                                                        <span>
-                                                            {{ $scheduleItem->sets }} sets × {{ $scheduleItem->reps }} reps
-                                                        </span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endforeach
+                                        @endforeach
+                                    </div>
                                 </div>
-                            </div>
-                        @endif
-                    @endforeach
+                            @endif
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+            @elseif($workoutPlan)
+                <div class="border dark:border-gray-700 rounded-lg p-4 mt-6">
+                    <div class="text-center py-8">
+                        <p class="text-gray-500 dark:text-gray-400">No workout data found for Week {{ $currentWeek }}</p>
+                        <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Create a workout plan to get started!</p>
+                    </div>
+                </div>
+            @endif
         </div>
     @else
         <div class="content-card text-center">

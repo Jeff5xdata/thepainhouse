@@ -60,37 +60,20 @@
                                                             @php
                                                                 $exercise = $item->exercise;
                                                                 $setDetails = $item->formatted_set_details;
+                                                                $warmupSets = collect($setDetails)->where('is_warmup', true);
+                                                                $workingSets = collect($setDetails)->where('is_warmup', false);
                                                             @endphp
                                                         <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                                                             <li class="text-sm text-gray-600 dark:text-gray-300">
                                                                 <div class="flex justify-between items-center ">
                                                                     <span>{{ $exercise->name }}</span>
                                                                     <span class="text-gray-500 dark:text-gray-400 ml-2">
-                                                                        @foreach($setDetails as $set)
-                                                                            @if($set['is_warmup'])
-                                                                                <p class="flex justify-between">
-                                                                                    <span class="text-yellow-500 dark:text-yellow-400 ml-2"> Warm Up :&nbsp;{{ $set['reps'] }} reps&nbsp;</span>
-                                                                                </p>
-                                                                            @endif
-                                                                            @if(!$set['is_warmup'])
-                                                                                <p class="flex justify-between">
-                                                                                    @if($set['time_in_seconds'] == null)
-                                                                                        <span> &nbsp; </span>
-                                                                                    @else
-                                                                                        <span>Set {{ $set['set_number'] }} : </span>
-                                                                                    @endif
-                                                                                    @if($item->is_time_based)
-                                                                                        @if($set['time_in_seconds'] == null)
-                                                                                            <span class="text-gray-500 dark:text-gray-400">&nbsp; </span>
-                                                                                        @else
-                                                                                            <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['time_in_seconds'] }}s&nbsp;</span>
-                                                                                        @endif
-                                                                                    @else
-                                                                                        <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['reps'] }} reps&nbsp;</span>
-                                                                                    @endif
-                                                                                </p>
-                                                                            @endif
-                                                                        @endforeach
+                                                                        @if($warmupSets->count() > 0)
+                                                                            <span class="text-yellow-500 dark:text-yellow-400">Warmup: {{ $warmupSets->count() }}×{{ $warmupSets->first()['reps'] ?? 0 }} reps</span>
+                                                                        @endif
+                                                                        @if($workingSets->count() > 0)
+                                                                            <span class="ml-2">{{ $workingSets->count() }}×{{ $workingSets->first()['reps'] ?? 0 }} reps</span>
+                                                                        @endif
                                                                     </span>
                                                                 </div>
                                                             </li>
@@ -128,45 +111,43 @@
                                     <div class="p-4">
                                         <div class="text-sm text-gray-600 dark:text-gray-300">
 
-                                            @if($items->first()->has_warmup)
+                                            @php
+                                                $setDetails = $items->first()->formatted_set_details;
+                                                $warmupSets = collect($setDetails)->where('is_warmup', true);
+                                                $workingSets = collect($setDetails)->where('is_warmup', false);
+                                            @endphp
+                                            @if($warmupSets->count() > 0)
                                                 <p class="font-medium text-gray-700 dark:text-gray-200 mb-2">Warmup</p>
                                                     <p class="flex justify-between">
                                                         <span>Sets x Reps:</span>
-                                                        <span class="text-gray-500 dark:text-gray-400">{{ $items->first()->warmup_sets }}&nbsp;x&nbsp;{{ $items->first()->warmup_reps }}</span>
+                                                        <span class="text-gray-500 dark:text-gray-400">{{ $warmupSets->count() }}&nbsp;x&nbsp;{{ $warmupSets->first()['reps'] ?? 0 }}</span>
                                                     </p>
-                                                    @if($items->first()->warmup_weight_percentage)
+                                                    @if($warmupSets->first()['weight_percentage'] ?? null)
                                                         <p class="flex justify-between">
                                                             <span>Weight:</span>
-                                                            <span class="text-gray-500 dark:text-gray-400">{{ $items->first()->warmup_weight_percentage }}% of working weight</span>
+                                                            <span class="text-gray-500 dark:text-gray-400">{{ $warmupSets->first()['weight_percentage'] }}% of working weight</span>
                                                         </p>
                                                     @endif
                                             @endif
                                             <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                                                 <p class="font-medium text-gray-700 dark:text-gray-200 mb-2">Working Sets</p>
-                                                @foreach($items as $item)
-                                                    @php
-                                                        $setDetails = $item->formatted_set_details;
-                                                    @endphp
-                                                    @foreach($setDetails as $set)
-                                                        @if(!$set['is_warmup'])
-                                                            <p class="flex justify-between">
-                                                                @if($set['time_in_seconds'] == null)
-                                                                    <span> &nbsp; </span>
-                                                                @else
-                                                                    <span>Set {{ $set['set_number'] }}:</span>
-                                                                @endif
-                                                                @if($item->is_time_based)
-                                                                    @if($set['time_in_seconds'] == null)
-                                                                        <span class="text-gray-500 dark:text-gray-400">&nbsp; </span>
-                                                                        @else
-                                                                        <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['time_in_seconds'] }}s&nbsp;</span>
-                                                                    @endif
-                                                                @else
-                                                                    <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['reps'] }} reps&nbsp;</span>
-                                                                @endif
-                                                            </p>
+                                                @foreach($workingSets as $set)
+                                                    <p class="flex justify-between">
+                                                        @if($set['time_in_seconds'] == null)
+                                                            <span> &nbsp; </span>
+                                                        @else
+                                                            <span>Set {{ $set['set_number'] }}:</span>
                                                         @endif
-                                                    @endforeach
+                                                        @if($item->is_time_based)
+                                                            @if($set['time_in_seconds'] == null)
+                                                                <span class="text-gray-500 dark:text-gray-400">&nbsp; </span>
+                                                            @else
+                                                                <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['time_in_seconds'] }}s&nbsp;</span>
+                                                            @endif
+                                                        @else
+                                                            <span class="text-gray-500 dark:text-gray-400">&nbsp;{{ $set['reps'] }} reps&nbsp;</span>
+                                                        @endif
+                                                    </p>
                                                 @endforeach
                                             </div>
                                         </div>

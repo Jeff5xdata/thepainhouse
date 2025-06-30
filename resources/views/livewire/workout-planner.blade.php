@@ -39,9 +39,9 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Week</label>
                         <div class="mb-4 sm:mb-6">
                             <select wire:model.live="currentWeek" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                @for ($i = 1; $i <= $weeks_duration; $i++)
-                                    <option value="{{ $i }}">Week {{ $i }}</option>
-                                @endfor
+                                @foreach($this->getWeekRange() as $week)
+                                    <option value="{{ $week }}">ISO Week {{ $week }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -59,10 +59,10 @@
 
                 <div>
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-2 sm:space-y-0">
-                        <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">Exercises for Week {{ $currentWeek }}, {{ $daysOfWeek[$currentDay] }}</h3>
+                        <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">Exercises for ISO Week {{ $currentWeek }}, {{ $daysOfWeek[$currentDay] }}</h3>
                     </div>
 
-                    <div class="border dark:border-gray-700 rounded-lg p-3 sm:p-4">
+                    <div class=" p-2 sm:p-2">
                         @if (isset($schedule[$currentWeek][$currentDay]) && count($schedule[$currentWeek][$currentDay]) > 0)
                             <div class="space-y-3 sm:space-y-4">
                                 @foreach ($schedule[$currentWeek][$currentDay] as $index => $exerciseData)
@@ -81,7 +81,7 @@
                                                 <button type="button" 
                                                     class="text-sm {{ $exerciseData['has_warmup'] ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500' }} hover:text-indigo-900 dark:hover:text-indigo-300 custom-tooltip-right"
                                                     data-tooltip="Add warmup sets to this exercise"
-                                                    wire:click="toggleWarmup({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})">
+                                                    wire:click="toggleWarmup({{ $currentWeek }}, {{ $currentDay }}, {{ $index }})">
                                                     <span class="flex items-center">
                                                         <svg class="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -91,7 +91,7 @@
                                                 </button>
                                                 <button type="button" class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 custom-tooltip-right"
                                                     data-tooltip="Remove this exercise"
-                                                    wire:click="removeExercise({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})">
+                                                    wire:click="removeExercise({{ $currentWeek }}, {{ $currentDay }}, {{ $index }})">
                                                     <svg class="h-4 w-4 sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                             d="M6 18L18 6M6 6l12 12" />
@@ -107,7 +107,7 @@
                                                     <label class="text-xs text-gray-500 dark:text-gray-400">Warmup Sets</label>
                                                     <div class="flex items-center space-x-2 mt-1">
                                                         <button type="button" 
-                                                            wire:click="removeWarmupSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                            wire:click="removeWarmupSet({{ $currentWeek }}, {{ $currentDay }}, {{ $index }})"
                                                             class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
                                                             {{ ($exerciseData['warmup_sets'] ?? 2) <= 1 ? 'disabled' : '' }}>
                                                             <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,7 +118,7 @@
                                                             {{ $exerciseData['warmup_sets'] ?? 2 }}
                                                         </span>
                                                         <button type="button" 
-                                                            wire:click="addWarmupSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                            wire:click="addWarmupSet({{ $currentWeek }}, {{ $currentDay }}, {{ $index }})"
                                                             class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
                                                             <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -152,7 +152,7 @@
                                         @endif
                                         <div class="mt-4 space-y-3 sm:space-y-4">
                                             <div class="flex items-center">
-                                                <button type="button" wire:click="toggleTimeBased({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                <button type="button" wire:click="toggleTimeBased({{ $currentWeek }}, {{ $currentDay }}, {{ $index }})"
                                                     class="inline-flex items-center px-2.5 py-1.5 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
                                                     <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         @if($exerciseData['is_time_based'])
@@ -179,7 +179,7 @@
                                                         <label class="text-xs text-gray-500 dark:text-gray-400">Working Sets</label>
                                                         <div class="flex items-center space-x-2 mt-1">
                                                             <button type="button" 
-                                                                wire:click="removeSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                                wire:click="removeSet({{ $currentWeek }}, {{ $currentDay }}, {{ $index }})"
                                                                 class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
                                                                 {{ ($exerciseData['sets'] ?? 1) <= 1 ? 'disabled' : '' }}>
                                                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +190,7 @@
                                                                 {{ $exerciseData['sets'] ?? 1 }}
                                                             </span>
                                                             <button type="button" 
-                                                                wire:click="addSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                                wire:click="addSet({{ $currentWeek }}, {{ $currentDay }}, {{ $index }})"
                                                                 class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
                                                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -256,7 +256,7 @@
                                                         <label class="text-xs text-gray-500 dark:text-gray-400">Working Sets</label>
                                                         <div class="flex items-center space-x-2 mt-1">
                                                             <button type="button" 
-                                                                wire:click="removeSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                                wire:click="removeSet({{ $currentWeek }}, {{ $currentDay }}, {{ $index }})"
                                                                 class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800"
                                                                 {{ ($exerciseData['sets'] ?? 1) <= 1 ? 'disabled' : '' }}>
                                                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -267,7 +267,7 @@
                                                                 {{ $exerciseData['sets'] ?? 1 }}
                                                             </span>
                                                             <button type="button" 
-                                                                wire:click="addSet({{ $currentWeek }}, '{{ $currentDay }}', {{ $index }})"
+                                                                wire:click="addSet({{ $currentWeek }}, {{ $currentDay }}, {{ $index }})"
                                                                 class="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
                                                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -474,21 +474,28 @@
                                                                         {{ $this->getExerciseName($exercise['exercise_id']) }}
                                                                     </div>
                                                                     <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                                        @php
+                                                                            $setDetails = $exercise['set_details'] ?? [];
+                                                                            $warmupSets = collect($setDetails)->where('is_warmup', true);
+                                                                            $workingSets = collect($setDetails)->where('is_warmup', false);
+                                                                        @endphp
                                                                         @if($exercise['is_time_based'])
                                                                             Duration: {{ $this->formatDuration($exercise['time_in_seconds']) }}
                                                                         @else
-                                                                            {{ $exercise['sets'] }} sets × {{ $exercise['reps'] }} reps
+                                                                            {{ $workingSets->count() }} sets × {{ $workingSets->first()['reps'] ?? 0 }} reps
                                                                         @endif
-                                                                        @if($exercise['has_warmup'])
+                                                                        @if($warmupSets->count() > 0)
                                                                             <br>
                                                                             <span class="text-gray-500 dark:text-gray-500">
                                                                                 Warmup: 
                                                                                 @if($exercise['is_time_based'])
-                                                                                    {{ $this->formatDuration($exercise['warmup_time_in_seconds']) }}
+                                                                                    {{ $this->formatDuration($warmupSets->first()['time_in_seconds'] ?? 0) }}
                                                                                 @else
-                                                                                    {{ $exercise['warmup_sets'] }} × {{ $exercise['warmup_reps'] }}
+                                                                                    {{ $warmupSets->count() }} × {{ $warmupSets->first()['reps'] ?? 0 }}
                                                                                 @endif
-                                                                                ({{ $exercise['warmup_weight_percentage'] }}% weight)
+                                                                                @if($warmupSets->first()['weight_percentage'] ?? null)
+                                                                                    ({{ $warmupSets->first()['weight_percentage'] }}% weight)
+                                                                                @endif
                                                                             </span>
                                                                         @endif
                                                                     </div>

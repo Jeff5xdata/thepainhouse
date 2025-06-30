@@ -1,6 +1,6 @@
 # The Pain House
 
-A powerful weightlifting tracking application built with Laravel and Livewire. Track your lifts, monitor progress, and achieve your strength goals with our comprehensive weightlifting platform.
+A powerful weightlifting tracking application built with Laravel and Livewire. Track your lifts, monitor progress, manage nutrition, and achieve your strength goals with our comprehensive fitness platform.
 
 ## 🏋️ Features
 
@@ -13,6 +13,17 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **Warm-up Sets**: Configure automatic warm-up sets with percentage-based weights
 -   **Time-based Exercises**: Support for timed exercises (cardio, holds, etc.)
 
+### Nutrition Tracking
+
+-   **Food Search**: Search for food items by name using the Chomp API
+-   **Barcode Scanning**: Scan product barcodes using your phone's camera
+-   **Nutrition Tracking**: Track calories, protein, carbs, fat, and other nutrients
+-   **Meal Organization**: Organize food items by meal type (breakfast, lunch, dinner, snack)
+-   **Daily Summaries**: View daily nutrition totals and breakdowns
+-   **Weekly Summaries**: View weekly nutrition totals (Monday-Sunday) with daily breakdown
+-   **Food History**: Keep track of what you've eaten with timestamps
+-   **View Modes**: Toggle between daily and weekly views
+
 ### Trainer-Client Management
 
 -   **Trainer Accounts**: Dedicated trainer profiles with client management capabilities
@@ -22,6 +33,9 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **Client Communication**: Built-in messaging system for trainer-client communication
 -   **Client Dashboard**: Comprehensive overview of client's fitness journey
 -   **Workout Assignment**: Assign new workouts to clients with automatic notifications
+-   **Trainer Request System**: Clients can request trainers by email with status tracking
+-   **Messaging Center**: Three-tab interface for messages, incoming requests, and outgoing requests
+-   **Real-time Status Updates**: Track trainer request status with visual badges (Pending/Approved/Rejected)
 
 ### Progress Tracking & Analytics
 
@@ -30,6 +44,7 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **Progress Charts**: Visual progress tracking for weights, reps, and volume
 -   **Performance Metrics**: Monitor max weights, total volume, and rep counts
 -   **Time-based Analysis**: Filter progress by week, month, or year
+-   **Nutrition Analytics**: Track nutrition trends and daily/weekly summaries
 
 ### Advanced Workout Features
 
@@ -101,7 +116,17 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
     npm run dev
     ```
 
-6. **Start the development server**
+6. **Configure Chomp API (for nutrition tracking)**
+
+    ```bash
+    # Add to your .env file:
+    CHOMP_API_KEY=your_chomp_api_key_here
+    CHOMP_API_USER=your_user_id_here
+    ```
+
+    Get your API credentials from [Chomp API](https://chompthis.com/api/)
+
+7. **Start the development server**
     ```bash
     php artisan serve
     ```
@@ -114,26 +139,30 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **PWA**: Laravel PWA package
 -   **Charts**: Custom progress tracking with Alpine.js
 -   **File Handling**: PhpSpreadsheet for data export/import
+-   **Nutrition API**: Chomp API v2 for food data and barcode scanning
+-   **Barcode Scanning**: WebRTC camera API for mobile barcode scanning
 
 ## 👥 Trainer-Client Workflow
 
 ### For Trainers
 
 1. **Create Trainer Account**: Register and set up your trainer profile
-2. **Accept Client Requests**: Clients can send trainer requests via email
+2. **Accept Client Requests**: Clients can send trainer requests via email or messaging center
 3. **Manage Clients**: View all your clients in the trainer dashboard
 4. **Create Workout Plans**: Design comprehensive workout plans for clients
 5. **Copy Workouts**: Copy workouts from your plan to client plans
-6. **Monitor Progress**: Track client progress and workout completion
-7. **Communicate**: Send messages and notifications to clients
+6. **Monitor Progress**: Track client progress, workout completion, and nutrition data
+7. **Communicate**: Send messages and notifications to clients through the messaging center
 
 ### For Clients
 
-1. **Request Trainer**: Send a trainer request with a message
-2. **Accept Trainer**: Approve trainer requests to establish relationship
-3. **Receive Workouts**: Get assigned workouts from your trainer
-4. **Track Progress**: Complete workouts and monitor your progress
-5. **Communicate**: Message your trainer for guidance and support
+1. **Request Trainer**: Send a trainer request with a message via email or messaging center
+2. **Track Request Status**: Monitor your trainer request status with visual badges
+3. **Accept Trainer**: Approve trainer requests to establish relationship
+4. **Receive Workouts**: Get assigned workouts from your trainer
+5. **Track Progress**: Complete workouts and monitor your progress
+6. **Log Nutrition**: Track your daily food intake and nutrition goals
+7. **Communicate**: Message your trainer for guidance and support
 
 ### Copy to Client Feature
 
@@ -146,12 +175,37 @@ Trainers can easily copy workouts to their clients:
 5. **Set Schedule**: Specify target week and day for the client
 6. **Copy & Notify**: The workout is copied and the client is automatically notified
 
+## 🍎 Nutrition Tracking Features
+
+### Food Search & Barcode Scanning
+
+-   **Name Search**: Search for food items by name using the Chomp API
+-   **Barcode Scanning**: Use your phone's camera to scan product barcodes
+-   **Manual Barcode Entry**: Enter barcode numbers manually if scanning isn't available
+-   **Real-time Results**: Live search results as you type
+
+### Meal Organization
+
+-   **Meal Types**: Organize food by breakfast, lunch, dinner, and snacks
+-   **Quantity Tracking**: Log specific quantities and portion sizes
+-   **Notes**: Add optional notes to food entries
+-   **Quick Add**: Streamlined food logging process
+
+### Nutrition Analytics
+
+-   **Daily Summaries**: Total calories, protein, carbs, and fat for each day
+-   **Weekly Summaries**: Weekly totals with daily breakdown charts
+-   **Nutrition History**: Complete food log with timestamps
+-   **View Modes**: Toggle between daily and weekly views
+-   **Data Indicators**: Visual indicators for days with logged food
+
 ## 📱 Progressive Web App Features
 
 -   **Installable**: Add to home screen on mobile devices
 -   **Offline Support**: Basic offline functionality
 -   **App-like Experience**: Native app feel on mobile
 -   **Push Notifications**: Ready for future notification features
+-   **Camera Access**: Barcode scanning functionality on mobile devices
 
 ## 🔧 Configuration
 
@@ -170,6 +224,13 @@ Configure your default workout preferences:
 -   Categorize by muscle groups
 -   Specify equipment requirements
 -   Add detailed descriptions
+
+### Nutrition Settings
+
+-   Configure Chomp API credentials
+-   Set up barcode scanning permissions
+-   Customize meal type preferences
+-   Configure nutrition tracking goals
 
 ### Backup & Restore
 
@@ -191,6 +252,8 @@ The application manages several key data models:
 -   **Share Links**: Secure workout plan sharing
 -   **Trainer Requests**: Client-trainer relationship management
 -   **Messages**: Communication system between trainers and clients
+-   **Food Items**: Food product information from Chomp API
+-   **Food Logs**: User food consumption records
 
 ## 🔒 Security Features
 
@@ -200,6 +263,7 @@ The application manages several key data models:
 -   **SQL Injection Protection**: Eloquent ORM with parameter binding
 -   **XSS Protection**: Blade templating with automatic escaping
 -   **Trainer-Client Isolation**: Secure separation of trainer and client data
+-   **API Security**: Chomp API authentication with user-specific credentials
 
 ## 📈 Performance Optimizations
 
@@ -208,6 +272,7 @@ The application manages several key data models:
 -   **Caching**: Ready for Redis/Memcached integration
 -   **Asset Optimization**: Vite-based asset compilation
 -   **Lazy Loading**: Progressive loading of components
+-   **API Caching**: Efficient Chomp API request handling
 
 ## 🤝 Contributing
 
@@ -227,8 +292,18 @@ For support and questions:
 
 -   Check the application logs for detailed error messages
 -   Review the backup/restore documentation in `BACKUP_RESTORE.md`
+-   Review the food tracker documentation in `FOOD_TRACKER_README.md`
+-   Review the trainer system documentation in `TRAINER_SYSTEM_README.md`
+-   Review the Chomp API setup in `CHOMP_API_SETUP.md`
 -   Ensure you have the latest version of the application
+
+## 📚 Additional Documentation
+
+-   **Backup & Restore**: See `BACKUP_RESTORE.md` for detailed backup/restore instructions
+-   **Food Tracker**: See `FOOD_TRACKER_README.md` for nutrition tracking features
+-   **Trainer System**: See `TRAINER_SYSTEM_README.md` for trainer-client management
+-   **Chomp API Setup**: See `CHOMP_API_SETUP.md` for nutrition API configuration
 
 ---
 
-**The Pain House** - Transform your strength training journey with comprehensive workout tracking, progress monitoring, and trainer-client management.
+**The Pain House** - Transform your strength training journey with comprehensive workout tracking, nutrition monitoring, progress analytics, and trainer-client management.
