@@ -6,6 +6,8 @@ use Livewire\Component;
 use App\Models\User;
 use App\Models\WorkoutSession;
 use App\Models\FoodLog;
+use App\Models\WeightMeasurement;
+use App\Models\BodyMeasurement;
 use Carbon\Carbon;
 
 class TrainerDashboard extends Component
@@ -15,6 +17,10 @@ class TrainerDashboard extends Component
     public $clientStats = [];
     public $recentWorkouts = [];
     public $recentNutrition = [];
+    public $recentWeightMeasurements = [];
+    public $recentBodyMeasurements = [];
+    public $weightStats = [];
+    public $bodyMeasurementStats = [];
 
     public function mount()
     {
@@ -37,6 +43,12 @@ class TrainerDashboard extends Component
             },
             'foodLogs' => function ($query) {
                 $query->latest()->limit(7);
+            },
+            'weightMeasurements' => function ($query) {
+                $query->latest()->limit(5);
+            },
+            'bodyMeasurements' => function ($query) {
+                $query->latest()->limit(5);
             },
             'workoutPlans' => function ($query) {
                 $query->latest();
@@ -84,12 +96,46 @@ class TrainerDashboard extends Component
             ->limit(7)
             ->get();
 
+        $this->recentWeightMeasurements = $client->weightMeasurements()
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $this->recentBodyMeasurements = $client->bodyMeasurements()
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        // Weight statistics
+        $totalWeightMeasurements = $client->weightMeasurements()->count();
+        $latestWeight = $client->weightMeasurements()->latest()->first();
+        $weightChange = null;
+        $currentWeight = null;
+        
+        if ($latestWeight) {
+            $currentWeight = $latestWeight->weight_in_kg;
+            $firstWeight = $client->weightMeasurements()->oldest()->first();
+            if ($firstWeight && $firstWeight->id !== $latestWeight->id) {
+                $weightChange = $currentWeight - $firstWeight->weight_in_kg;
+            }
+        }
+
+        // Body measurement statistics
+        $totalBodyMeasurements = $client->bodyMeasurements()->count();
+        $latestBodyMeasurement = $client->bodyMeasurements()->latest()->first();
+        $currentBMI = $latestBodyMeasurement ? $latestBodyMeasurement->bmi : null;
+
         $this->clientStats = [
             'total_workouts' => $totalWorkouts,
             'week_workouts' => $weekWorkouts,
             'month_workouts' => $monthWorkouts,
             'total_food_logs' => $totalFoodLogs,
             'week_food_logs' => $weekFoodLogs,
+            'total_weight_measurements' => $totalWeightMeasurements,
+            'current_weight' => $currentWeight,
+            'weight_change' => $weightChange,
+            'total_body_measurements' => $totalBodyMeasurements,
+            'current_bmi' => $currentBMI,
             'current_workout_plan' => $client->workoutPlans()->latest()->first(),
         ];
     }
@@ -107,6 +153,21 @@ class TrainerDashboard extends Component
     public function viewClientProgress($clientId)
     {
         return redirect()->route('trainer.client.progress', $clientId);
+    }
+
+    public function viewClientWeightTracker($clientId)
+    {
+        return redirect()->route('trainer.client.weight', ['clientId' => $clientId]);
+    }
+
+    public function viewClientBodyMeasurements($clientId)
+    {
+        return redirect()->route('trainer.client.body', ['clientId' => $clientId]);
+    }
+
+    public function viewClientProgressCharts($clientId)
+    {
+        return redirect()->route('trainer.client.charts', ['clientId' => $clientId]);
     }
 
     public function render()

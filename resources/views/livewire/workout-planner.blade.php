@@ -40,7 +40,7 @@
                         <div class="mb-4 sm:mb-6">
                             <select wire:model.live="currentWeek" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 @foreach($this->getWeekRange() as $week)
-                                    <option value="{{ $week }}">ISO Week {{ $week }}</option>
+                                    <option value="{{ $week }}" {{ $week === \Carbon\Carbon::now()->isoWeek() ? 'selected' : '' }}>ISO Week {{ $week }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -50,16 +50,42 @@
                         <div class="mb-4 sm:mb-6">
                             <select wire:model.live="currentDay" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 @foreach ($daysOfWeek as $day => $dayName)
-                                    <option value="{{ $day }}">{{ $dayName }}</option>
+                                    <option value="{{ $day }}" {{ $day === \Carbon\Carbon::now()->dayOfWeek ? 'selected' : '' }}>{{ $dayName }}</option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
                 </div>
+                
+                <div class="flex justify-center mb-4">
+                    <button type="button" 
+                        wire:click="goToToday"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Go to Today
+                    </button>
+                </div>
 
                 <div>
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-2 sm:space-y-0">
-                        <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">Exercises for ISO Week {{ $currentWeek }}, {{ $daysOfWeek[$currentDay] }}</h3>
+                        <div>
+                            <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100">
+                                Exercises for ISO Week {{ $currentWeek }}, {{ $daysOfWeek[$currentDay] }}
+                                @if($this->isToday())
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 ml-2">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                        Today
+                                    </span>
+                                @endif
+                            </h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {{ $this->getTodayDate() }}
+                            </p>
+                        </div>
                     </div>
 
                     <div class=" p-2 sm:p-2">
@@ -69,13 +95,21 @@
                                     <div class="border dark:border-gray-700 rounded-lg p-3 sm:p-4">
                                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                                             <div class="flex-1 min-w-0">
-                                                <h4 class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ $exercises->firstWhere('id', $exerciseData['exercise_id'])->name }}</h4>
-                                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                                    {{ $categories[$exercises->firstWhere('id', $exerciseData['exercise_id'])->category] ?? $exercises->firstWhere('id', $exerciseData['exercise_id'])->category }}
-                                                    @if($exercises->firstWhere('id', $exerciseData['exercise_id'])->equipment)
-                                                        • {{ $exercises->firstWhere('id', $exerciseData['exercise_id'])->equipment }}
-                                                    @endif
-                                                </p>
+                                                @php
+                                                    $exercise = $exercises->firstWhere('id', $exerciseData['exercise_id']);
+                                                @endphp
+                                                @if($exercise)
+                                                    <h4 class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ $exercise->name }}</h4>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                                        {{ $categories[$exercise->category] ?? $exercise->category }}
+                                                        @if($exercise->equipment)
+                                                            • {{ $exercise->equipment }}
+                                                        @endif
+                                                    </p>
+                                                @else
+                                                    <h4 class="font-medium text-red-600 dark:text-red-400 truncate">Exercise Not Found (ID: {{ $exerciseData['exercise_id'] }})</h4>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">This exercise may have been deleted</p>
+                                                @endif
                                             </div>
                                             <div class="flex items-center space-x-2 sm:space-x-4">
                                                 <button type="button" 

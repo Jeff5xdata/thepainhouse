@@ -34,12 +34,15 @@
                                 $daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
                             @endphp
 
-                            @for($week = 1; $week <= $workoutPlan->weeks_duration; $week++)
+                            @php
+                                $currentWeek = \Carbon\Carbon::now()->isoWeek();
+                            @endphp
+                            @for($week = $currentWeek; $week < $currentWeek + $workoutPlan->weeks_duration; $week++)
                                 <!-- Week Card -->
                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm overflow-hidden">
                                     <!-- Week Header -->
                                     <div class="bg-gray-100 dark:bg-gray-600 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
-                                        <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">Week {{ $week }}</h4>
+                                        <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100">ISO Week {{ $week }}</h4>
                                     </div>
                                     <!-- Week Content -->
                                     <div class="p-4">

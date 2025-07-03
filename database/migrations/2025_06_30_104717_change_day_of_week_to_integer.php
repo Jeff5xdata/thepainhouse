@@ -12,11 +12,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Change day_of_week column type in workout_plan_schedule table
-        DB::statement('ALTER TABLE workout_plan_schedule MODIFY COLUMN day_of_week INT');
+        // Use Laravel's schema builder for database-agnostic column modification
+        Schema::table('workout_plan_schedule', function (Blueprint $table) {
+            $table->integer('day_of_week')->change();
+        });
 
-        // Change day_of_week column type in workout_sessions table
-        DB::statement('ALTER TABLE workout_sessions MODIFY COLUMN day_of_week INT');
+        Schema::table('workout_sessions', function (Blueprint $table) {
+            $table->integer('day_of_week')->change();
+        });
     }
 
     /**
@@ -24,10 +27,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Change day_of_week column type back to string in workout_plan_schedule table
-        DB::statement('ALTER TABLE workout_plan_schedule MODIFY COLUMN day_of_week VARCHAR(255)');
+        // Change day_of_week column type back to string
+        Schema::table('workout_plan_schedule', function (Blueprint $table) {
+            $table->string('day_of_week')->change();
+        });
 
-        // Change day_of_week column type back to string in workout_sessions table
-        DB::statement('ALTER TABLE workout_sessions MODIFY COLUMN day_of_week VARCHAR(255)');
+        Schema::table('workout_sessions', function (Blueprint $table) {
+            $table->string('day_of_week')->change();
+        });
     }
 };

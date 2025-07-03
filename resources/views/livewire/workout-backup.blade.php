@@ -52,13 +52,6 @@
                                     @enderror
                                 </div>
 
-                                <!-- Test button for debugging -->
-                                <button type="button"
-                                    wire:click="testFileUpload"
-                                    class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                    Test File Upload
-                                </button>
-
                                 <button type="button"
                                     wire:click="previewRestore"
                                     wire:loading.attr="disabled"
@@ -166,6 +159,30 @@
                                 }
                             }));
                         });
+
+                        // Add debugging for restore functionality
+                        @this.on('notify', (event) => {
+                            console.log('Livewire notification:', event);
+                        });
+
+                        // Debug file upload
+                        const fileInput = document.querySelector('input[type="file"]');
+                        if (fileInput) {
+                            fileInput.addEventListener('change', (e) => {
+                                console.log('File selected:', e.target.files[0]);
+                            });
+                        }
+                    });
+
+                    // Debug modal functionality
+                    document.addEventListener('DOMContentLoaded', () => {
+                        // Check if modal elements exist
+                        const modal = document.getElementById('restore-modal');
+                        if (modal) {
+                            console.log('Restore modal found');
+                        } else {
+                            console.log('Restore modal not found');
+                        }
                     });
                 </script>
             </div>

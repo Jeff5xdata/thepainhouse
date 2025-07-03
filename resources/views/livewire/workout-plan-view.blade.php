@@ -42,11 +42,122 @@
                 </div>
             </div>
 
+            <!-- Incomplete Workouts Section -->
+            <div class="border dark:border-gray-700 rounded-lg p-4 mt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium dark:text-white">Incomplete Workouts</h3>
+                    <div class="flex items-center space-x-2">
+                        @if(count($incompleteWorkouts) > 0)
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                {{ count($incompleteWorkouts) }} pending
+                            </span>
+                        @endif
+                        <button wire:click="refreshIncompleteWorkouts" class="icon-button dark:text-white" title="Refresh incomplete workouts">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                @if(count($incompleteWorkouts) > 0)
+                    <div class="space-y-4">
+                        @foreach($incompleteWorkouts as $workout)
+                            <div class="border rounded-lg p-4 {{ $workout['status'] === 'skipped' ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800' }}">
+                                <div class="flex justify-between items-start mb-3">
+                                    <div>
+                                        <h4 class="font-medium text-gray-900 dark:text-white">
+                                            {{ $workout['day_name'] }} - Week {{ $workout['week_number'] }}
+                                        </h4>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                                            {{ \Carbon\Carbon::parse($workout['date'])->format('M j, Y') }}
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                            {{ $workout['status'] === 'in_progress' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 
+                                               ($workout['status'] === 'planned' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' : 
+                                               'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200') }}">
+                                            {{ ucfirst(str_replace('_', ' ', $workout['status'])) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                @if(count($workout['incomplete_exercises']) > 0)
+                                    <div class="space-y-2">
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                                            <span class="font-medium">{{ $workout['completed_exercises'] }}/{{ $workout['total_exercises'] }}</span> exercises completed
+                                        </p>
+                                        <div class="space-y-1">
+                                            @foreach($workout['incomplete_exercises'] as $exercise)
+                                                <div class="flex justify-between items-center text-sm">
+                                                    <span class="text-gray-700 dark:text-gray-300">{{ $exercise['exercise_name'] }}</span>
+                                                    <span class="text-gray-500 dark:text-gray-400">
+                                                        {{ $exercise['completed_sets'] }}/{{ $exercise['sets_count'] }} sets
+                                                    </span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                                
+                                <div class="mt-4 flex space-x-3">
+                                    @if($workout['status'] === 'skipped')
+                                        <button wire:click="resumeWorkout({{ $workout['id'] }})" 
+                                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800">
+                                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Resume Workout
+                                        </button>
+                                    @else
+                                        <a href="{{ route('workout.session', $workout['id']) }}" 
+                                           class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Continue Workout
+                                        </a>
+                                    @endif
+                                    
+                                    @if($workout['status'] !== 'skipped')
+                                        <button wire:click="skipWorkout({{ $workout['id'] }})" 
+                                                class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                                            <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                            Skip
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8">
+                        <svg class="mx-auto h-12 w-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">All caught up!</h3>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No incomplete workouts found.</p>
+                        <div class="mt-6">
+                            <a href="{{ route('workout.session') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Start New Workout
+                            </a>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
             <!-- Week Navigation -->
             @if($workoutPlan && $this->weekHasData($currentWeek))
                 <div class="border dark:border-gray-700 rounded-lg p-4 mt-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-medium dark:text-white">Week {{ $currentWeek }}</h3>
+                        <h3 class="text-lg font-medium dark:text-white">ISO Week {{ $currentWeek }}</h3>
                         <div class="flex space-x-2">
                             <button wire:click="previousWeek" class="icon-button dark:text-white" {{ !$this->hasPreviousWeek() ? 'disabled' : '' }}>←</button>
                             <button wire:click="nextWeek" class="icon-button dark:text-white" {{ !$this->hasNextWeek() ? 'disabled' : '' }}>→</button>
@@ -104,7 +215,7 @@
             @elseif($workoutPlan)
                 <div class="border dark:border-gray-700 rounded-lg p-4 mt-6">
                     <div class="text-center py-8">
-                        <p class="text-gray-500 dark:text-gray-400">No workout data found for Week {{ $currentWeek }}</p>
+                        <p class="text-gray-500 dark:text-gray-400">No workout data found for ISO Week {{ $currentWeek }}</p>
                         <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Create a workout plan to get started!</p>
                     </div>
                 </div>
@@ -135,6 +246,12 @@
                 window.dispatchEvent(new CustomEvent('notify', { 
                     detail: { type: 'success', message: 'Exercise order updated successfully' } 
                 }));
+            });
+            
+            // Listen for workout completion events
+            @this.on('workoutCompleted', () => {
+                // Refresh the incomplete workouts list
+                @this.refreshIncompleteWorkouts();
             });
         });
     </script>

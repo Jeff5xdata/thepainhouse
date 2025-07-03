@@ -42,6 +42,13 @@ class WorkoutSession extends Component
 
     public function mount($workoutSession = null)
     {
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            session()->flash('error', 'Please log in to access your workout session.');
+            $this->redirect(route('login'));
+            return;
+        }
+        
         // Initialize todayExercises as empty collection to prevent null errors
         $this->todayExercises = collect();
         
@@ -382,6 +389,11 @@ class WorkoutSession extends Component
             }
 
             DB::commit();
+
+            // Delete the workout plan schedule items after completion
+            if ($this->workoutPlan) {
+                \App\Models\WorkoutPlanSchedule::where('workout_plan_id', $this->workoutPlan->id)->delete();
+            }
 
             $this->redirect(route('workout.history'));
         } catch (\Exception $e) {
@@ -774,10 +786,22 @@ class WorkoutSession extends Component
             throw new \Exception("set_details is required but empty for exercise ID: {$scheduleItem->exercise_id} in week {$scheduleItem->week_number}, day {$scheduleItem->day_of_week}. Please ensure the workout plan has properly configured set_details.");
         }
 
+        // Ensure set_details is an array
+        $setDetails = is_string($scheduleItem->set_details) ? json_decode($scheduleItem->set_details, true) : $scheduleItem->set_details;
+        
+        if (!is_array($setDetails)) {
+            throw new \Exception("set_details is not a valid array for exercise ID: {$scheduleItem->exercise_id}");
+        }
+
+        // Handle nested JSON structure with exercise_config and sets
+        if (isset($setDetails['sets'])) {
+            $setDetails = $setDetails['sets'];
+        }
+
         $warmupSets = [];
         $workingSets = [];
 
-        foreach ($scheduleItem->set_details as $set) {
+        foreach ($setDetails as $set) {
             if ($set['is_warmup'] ?? false) {
                 $warmupSets[] = $set;
             } else {

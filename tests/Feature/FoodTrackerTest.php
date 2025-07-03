@@ -3,7 +3,7 @@
 use App\Models\User;
 use App\Models\FoodItem;
 use App\Models\FoodLog;
-use App\Services\ChompApiService;
+use App\Services\FatSecretApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -69,8 +69,8 @@ test('food log can be created with valid data', function () {
     ]);
 });
 
-test('chomp api service can parse nutrition data', function () {
-    $chompService = app(ChompApiService::class);
+test('fatsecret api service can parse nutrition data', function () {
+    $fatSecretService = app(FatSecretApiService::class);
     
     $mockData = [
         'name' => 'Test Product',
@@ -86,11 +86,57 @@ test('chomp api service can parse nutrition data', function () {
         'id' => 'test-123',
     ];
     
-    $parsedData = $chompService->parseNutritionData($mockData);
+    $parsedData = $fatSecretService->parseNutritionData($mockData);
     
     expect($parsedData)->toHaveKeys([
         'name', 'brand', 'barcode', 'calories', 'protein', 'carbohydrates', 'fat'
     ]);
     expect($parsedData['name'])->toBe('Test Product');
     expect($parsedData['calories'])->toBe(150);
+});
+
+test('barcode formatting handles different formats correctly', function () {
+    $fatSecretService = app(FatSecretApiService::class);
+    
+    // Test UPC-A (12 digits) - should add leading zero
+    $upcA = '123456789012';
+    $formattedUpcA = $fatSecretService->formatBarcodeAsGtin13($upcA);
+    expect($formattedUpcA)->toBe('0123456789012');
+    expect($formattedUpcA)->toHaveLength(13);
+    
+    // Test EAN-13 (13 digits) - should remain unchanged
+    $ean13 = '1234567890123';
+    $formattedEan13 = $fatSecretService->formatBarcodeAsGtin13($ean13);
+    expect($formattedEan13)->toBe('1234567890123');
+    expect($formattedEan13)->toHaveLength(13);
+    
+    // Test EAN-8 (8 digits) - should add 5 leading zeros
+    $ean8 = '12345678';
+    $formattedEan8 = $fatSecretService->formatBarcodeAsGtin13($ean8);
+    expect($formattedEan8)->toBe('0000012345678');
+    expect($formattedEan8)->toHaveLength(13);
+    
+    // Test shorter barcode - should pad with zeros
+    $short = '12345';
+    $formattedShort = $fatSecretService->formatBarcodeAsGtin13($short);
+    expect($formattedShort)->toBe('0000000012345');
+    expect($formattedShort)->toHaveLength(13);
+    
+    // Test longer barcode - should truncate
+    $long = '12345678901234567890';
+    $formattedLong = $fatSecretService->formatBarcodeAsGtin13($long);
+    expect($formattedLong)->toBe('1234567890123');
+    expect($formattedLong)->toHaveLength(13);
+    
+    // Test barcode with non-digit characters - should remove them
+    $withChars = '123-456-789-012';
+    $formattedWithChars = $fatSecretService->formatBarcodeAsGtin13($withChars);
+    expect($formattedWithChars)->toBe('0001234567890');
+    expect($formattedWithChars)->toHaveLength(13);
+    
+    // Test empty string - should pad with zeros
+    $empty = '';
+    $formattedEmpty = $fatSecretService->formatBarcodeAsGtin13($empty);
+    expect($formattedEmpty)->toBe('0000000000000');
+    expect($formattedEmpty)->toHaveLength(13);
 });

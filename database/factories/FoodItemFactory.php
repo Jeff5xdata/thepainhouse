@@ -30,7 +30,7 @@ class FoodItemFactory extends Factory
             'sodium' => fake()->numberBetween(0, 1000),
             'cholesterol' => fake()->numberBetween(0, 100),
             'image_url' => fake()->imageUrl(),
-            'chomp_id' => fake()->unique()->uuid(),
+            'fatsecret_id' => fake()->unique()->uuid(),
         ];
     }
 }

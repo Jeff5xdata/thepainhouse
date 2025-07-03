@@ -1,10 +1,10 @@
 # Food Tracker Feature
 
-This feature adds comprehensive food tracking functionality to The Pain House workout application, integrating with the Chomp API for nutritional information and barcode scanning capabilities.
+This feature adds comprehensive food tracking functionality to The Pain House workout application, integrating with the FatSecret Platform API for nutritional information and barcode scanning capabilities.
 
 ## Features
 
--   **Food Search**: Search for food items by name using the Chomp API
+-   **Food Search**: Search for food items by name using the FatSecret Platform API
 -   **Barcode Scanning**: Scan product barcodes using your phone's camera
 -   **Nutrition Tracking**: Track calories, protein, carbs, fat, and other nutrients
 -   **Meal Organization**: Organize food items by meal type (breakfast, lunch, dinner, snack)
@@ -17,19 +17,21 @@ This feature adds comprehensive food tracking functionality to The Pain House wo
 
 ### 1. Environment Configuration
 
-Add the Chomp API key to your `.env` file:
+Add the FatSecret API credentials to your `.env` file:
 
 ```env
-CHOMP_API_KEY=your_chomp_api_key_here
+FATSECRET_CONSUMER_KEY=your_consumer_key_here
+FATSECRET_CONSUMER_SECRET=your_consumer_secret_here
+FATSECRET_ACCESS_TOKEN=your_access_token_here
 ```
 
-You can get a Chomp API key by signing up at [Chomp API](https://chompthis.com/api/).
+You can get FatSecret API credentials by signing up at [FatSecret Platform API](https://platform.fatsecret.com/).
 
 ### 2. Database Migration
 
 The feature creates two new database tables:
 
--   `food_items`: Stores food product information from Chomp API
+-   `food_items`: Stores food product information from FatSecret Platform API
 -   `food_logs`: Stores user food consumption records
 
 Run the migrations:
@@ -127,7 +129,7 @@ The system tracks the following nutritional values:
 
 ### Services
 
--   `ChompApiService`: Handles communication with the Chomp API
+-   `FatSecretApiService`: Handles communication with the FatSecret Platform API
 
 ### Components
 
@@ -172,14 +174,14 @@ Supported browsers:
 
 ### API Errors
 
-1. Verify your Chomp API key is correct
+1. Verify your FatSecret API credentials are correct
 2. Check API rate limits
 3. Ensure internet connection is stable
 
 ### Food Not Found
 
 1. Try different search terms
-2. Check if the barcode is in the Chomp database
+2. Check if the barcode is in the FatSecret database
 3. Some generic or local products may not be available
 
 ## Future Enhancements

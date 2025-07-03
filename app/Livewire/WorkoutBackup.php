@@ -53,21 +53,6 @@ class WorkoutBackup extends Component
         ];
     }
 
-    public function testFileUpload()
-    {
-        if ($this->backupFile) {
-            $this->dispatch('notify', [
-                'type' => 'info',
-                'message' => 'File selected: ' . $this->backupFile->getClientOriginalName() . ' (' . $this->backupFile->getSize() . ' bytes)'
-            ]);
-        } else {
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'message' => 'No file selected'
-            ]);
-        }
-    }
-
     public function createBackup()
     {
         // Redirect to controller for download
@@ -106,13 +91,23 @@ class WorkoutBackup extends Component
                 throw new \Exception('Invalid JSON format: ' . json_last_error_msg());
             }
 
+            // Validate backup file structure
             if (!$backupData || !isset($backupData['version'])) {
                 throw new \Exception('Invalid backup file format - missing version information');
             }
 
+            if (!isset($backupData['workout_plans']) || !isset($backupData['workout_sessions']) || !isset($backupData['exercise_sets'])) {
+                throw new \Exception('Invalid backup file format - missing required data sections');
+            }
+
+            // Validate user information
+            if (!isset($backupData['user']) || !isset($backupData['user']['name'])) {
+                throw new \Exception('Invalid backup file format - missing user information');
+            }
+
             $this->restorePreview = [
                 'version' => $backupData['version'],
-                'created_at' => $backupData['created_at'],
+                'created_at' => $backupData['created_at'] ?? 'Unknown',
                 'user' => $backupData['user'],
                 'workout_plans_count' => count($backupData['workout_plans'] ?? []),
                 'workout_sessions_count' => count($backupData['workout_sessions'] ?? []),
@@ -129,6 +124,14 @@ class WorkoutBackup extends Component
             ]);
 
         } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Backup preview failed: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'file_name' => $this->backupFile ? $this->backupFile->getClientOriginalName() : 'No file',
+                'file_size' => $this->backupFile ? $this->backupFile->getSize() : 0,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             $this->dispatch('notify', [
                 'type' => 'error',
                 'message' => 'Failed to read backup file: ' . $e->getMessage()
@@ -139,10 +142,20 @@ class WorkoutBackup extends Component
     public function restoreBackup()
     {
         try {
+            // Validate that we have backup data to restore
+            if (empty($this->restorePreview) || !isset($this->restorePreview['backup_data'])) {
+                throw new \Exception('No backup data available for restoration. Please upload and preview a backup file first.');
+            }
+
             DB::beginTransaction();
 
             $user = auth()->user();
             $backupData = $this->restorePreview['backup_data'];
+
+            // Validate backup data structure
+            if (!isset($backupData['version']) || !isset($backupData['workout_plans']) || !isset($backupData['workout_sessions']) || !isset($backupData['exercise_sets'])) {
+                throw new \Exception('Invalid backup data structure. Please ensure the backup file is complete and not corrupted.');
+            }
 
             // Restore workout settings if option is enabled
             if ($this->restoreOptions['include_settings'] && !empty($backupData['workout_settings'])) {
@@ -205,15 +218,43 @@ class WorkoutBackup extends Component
                 // Restore schedule items
                 if (!empty($planData['schedule_items'])) {
                     foreach ($planData['schedule_items'] as $scheduleData) {
-                        $exercise = Exercise::where('name', $scheduleData['exercise_name'])->first();
-                        
-                        if ($exercise) {
-                            $scheduleInsertData = $scheduleData['schedule_data'];
-                            $scheduleInsertData['workout_plan_id'] = $newPlan->id;
-                            $scheduleInsertData['exercise_id'] = $exercise->id;
-                            unset($scheduleInsertData['id'], $scheduleInsertData['created_at'], $scheduleInsertData['updated_at']);
+                        try {
+                            $exercise = Exercise::where('name', $scheduleData['exercise_name'])->first();
                             
-                            DB::table('workout_plan_schedule')->insert($scheduleInsertData);
+                            if ($exercise) {
+                                $scheduleInsertData = $scheduleData['schedule_data'];
+                                $scheduleInsertData['workout_plan_id'] = $newPlan->id;
+                                $scheduleInsertData['exercise_id'] = $exercise->id;
+                                unset($scheduleInsertData['id'], $scheduleInsertData['created_at'], $scheduleInsertData['updated_at']);
+                                
+                                // Handle set_details field - convert array to JSON string if needed
+                                if (isset($scheduleInsertData['set_details']) && is_array($scheduleInsertData['set_details'])) {
+                                    $scheduleInsertData['set_details'] = json_encode($scheduleInsertData['set_details']);
+                                }
+                                
+                                // Only include fields that belong to workout_plan_schedule table
+                                $allowedFields = [
+                                    'workout_plan_id', 'exercise_id', 'week_number', 'day_of_week', 
+                                    'order_in_day', 'set_details'
+                                ];
+                                
+                                $filteredData = array_intersect_key($scheduleInsertData, array_flip($allowedFields));
+                                
+                                // Ensure required fields have proper types
+                                $filteredData['week_number'] = (int) ($filteredData['week_number'] ?? 1);
+                                $filteredData['day_of_week'] = (string) ($filteredData['day_of_week'] ?? 1);
+                                $filteredData['order_in_day'] = (int) ($filteredData['order_in_day'] ?? 0);
+                                
+                                DB::table('workout_plan_schedule')->insert($filteredData);
+                            } else {
+                                \Log::warning('Exercise not found during restore: ' . $scheduleData['exercise_name']);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('Failed to restore schedule item: ' . $e->getMessage(), [
+                                'exercise_name' => $scheduleData['exercise_name'] ?? 'Unknown',
+                                'schedule_data' => $scheduleData['schedule_data'] ?? []
+                            ]);
+                            // Continue with other items instead of failing completely
                         }
                     }
                 }
@@ -243,22 +284,32 @@ class WorkoutBackup extends Component
                         // Restore exercise sets for this session
                         foreach ($backupData['exercise_sets'] as $setData) {
                             if ($setData['set_data']['workout_session_id'] == $sessionData['id']) {
-                                $exercise = Exercise::where('name', $setData['exercise_name'])->first();
-                                
-                                if ($exercise) {
-                                    $setCreateData = [
-                                        'workout_session_id' => $newSession->id,
-                                        'exercise_id' => $exercise->id,
-                                        'set_number' => $setData['set_data']['set_number'] ?? 1,
-                                        'reps' => $setData['set_data']['reps'] ?? 0,
-                                        'weight' => $setData['set_data']['weight'] ?? null,
-                                        'completed' => $setData['set_data']['completed'] ?? false,
-                                        'is_warmup' => $setData['set_data']['is_warmup'] ?? false,
-                                        'time_in_seconds' => $setData['set_data']['time_in_seconds'] ?? null,
-                                        'notes' => $setData['set_data']['notes'] ?? null,
-                                    ];
+                                try {
+                                    $exercise = Exercise::where('name', $setData['exercise_name'])->first();
+                                    
+                                    if ($exercise) {
+                                        $setCreateData = [
+                                            'workout_session_id' => $newSession->id,
+                                            'exercise_id' => $exercise->id,
+                                            'set_number' => (int) ($setData['set_data']['set_number'] ?? 1),
+                                            'reps' => (int) ($setData['set_data']['reps'] ?? 0),
+                                            'weight' => $setData['set_data']['weight'] ?? null,
+                                            'completed' => (bool) ($setData['set_data']['completed'] ?? false),
+                                            'is_warmup' => (bool) ($setData['set_data']['is_warmup'] ?? false),
+                                            'time_in_seconds' => $setData['set_data']['time_in_seconds'] ?? null,
+                                            'notes' => $setData['set_data']['notes'] ?? null,
+                                        ];
 
-                                    ExerciseSet::create($setCreateData);
+                                        ExerciseSet::create($setCreateData);
+                                    } else {
+                                        \Log::warning('Exercise not found during set restore: ' . $setData['exercise_name']);
+                                    }
+                                } catch (\Exception $e) {
+                                    \Log::error('Failed to restore exercise set: ' . $e->getMessage(), [
+                                        'exercise_name' => $setData['exercise_name'] ?? 'Unknown',
+                                        'set_data' => $setData['set_data'] ?? []
+                                    ]);
+                                    // Continue with other sets instead of failing completely
                                 }
                             }
                         }
@@ -282,6 +333,15 @@ class WorkoutBackup extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            // Log the error for debugging
+            \Log::error('Backup restore failed: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'backup_preview' => $this->restorePreview,
+                'restore_options' => $this->restoreOptions,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             $this->dispatch('notify', [
                 'type' => 'error',
                 'message' => 'Failed to restore backup: ' . $e->getMessage()

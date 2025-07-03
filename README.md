@@ -116,15 +116,15 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
     npm run dev
     ```
 
-6. **Configure Chomp API (for nutrition tracking)**
+6. **Configure FatSecret API (for nutrition tracking)**
 
     ```bash
     # Add to your .env file:
-    CHOMP_API_KEY=your_chomp_api_key_here
-    CHOMP_API_USER=your_user_id_here
+    FATSECRET_CONSUMER_KEY=your_consumer_key_here
+    FATSECRET_CONSUMER_SECRET=your_consumer_secret_here
     ```
 
-    Get your API credentials from [Chomp API](https://chompthis.com/api/)
+    Get your API credentials from [FatSecret Platform API](https://platform.fatsecret.com/)
 
 7. **Start the development server**
     ```bash
@@ -139,7 +139,7 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **PWA**: Laravel PWA package
 -   **Charts**: Custom progress tracking with Alpine.js
 -   **File Handling**: PhpSpreadsheet for data export/import
--   **Nutrition API**: Chomp API v2 for food data and barcode scanning
+-   **Nutrition API**: FatSecret Platform API for food data and barcode scanning
 -   **Barcode Scanning**: WebRTC camera API for mobile barcode scanning
 
 ## 👥 Trainer-Client Workflow
@@ -294,7 +294,7 @@ For support and questions:
 -   Review the backup/restore documentation in `BACKUP_RESTORE.md`
 -   Review the food tracker documentation in `FOOD_TRACKER_README.md`
 -   Review the trainer system documentation in `TRAINER_SYSTEM_README.md`
--   Review the Chomp API setup in `CHOMP_API_SETUP.md`
+-   Review the FatSecret API setup in `FATSECRET_API_SETUP.md`
 -   Ensure you have the latest version of the application
 
 ## 📚 Additional Documentation
@@ -302,7 +302,7 @@ For support and questions:
 -   **Backup & Restore**: See `BACKUP_RESTORE.md` for detailed backup/restore instructions
 -   **Food Tracker**: See `FOOD_TRACKER_README.md` for nutrition tracking features
 -   **Trainer System**: See `TRAINER_SYSTEM_README.md` for trainer-client management
--   **Chomp API Setup**: See `CHOMP_API_SETUP.md` for nutrition API configuration
+-   **FatSecret API Setup**: See `FATSECRET_API_SETUP.md` for nutrition API configuration
 
 ---
 

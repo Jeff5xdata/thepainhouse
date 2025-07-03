@@ -24,6 +24,8 @@ class WorkoutSession extends Model
     protected $casts = [
         'date' => 'datetime',
         'completed_at' => 'datetime',
+        'day_of_week' => 'integer',
+        'week_number' => 'integer',
     ];
 
     /**
@@ -39,7 +41,7 @@ class WorkoutSession extends Model
             'week_number' => 'required|integer|min:1',
             'day_of_week' => [
                 'required',
-                Rule::in(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])
+                Rule::in([1, 2, 3, 4, 5, 6, 7])
             ],
             'status' => [
                 'required',

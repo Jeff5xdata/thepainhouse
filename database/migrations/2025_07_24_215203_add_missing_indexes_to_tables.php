@@ -12,6 +12,13 @@ return new class extends Migration
      */
     private function indexExists($table, $index)
     {
+        // For SQLite, use PRAGMA to check indexes
+        if (DB::getDriverName() === 'sqlite') {
+            $indexes = DB::select("PRAGMA index_list({$table})");
+            return collect($indexes)->contains('name', $index);
+        }
+        
+        // For MySQL/PostgreSQL, use information_schema
         $dbName = DB::getDatabaseName();
         $result = DB::select("SELECT COUNT(1) as count FROM information_schema.statistics WHERE table_schema = ? AND table_name = ? AND index_name = ?", [$dbName, $table, $index]);
         return $result[0]->count > 0;

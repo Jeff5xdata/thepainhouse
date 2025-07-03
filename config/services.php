@@ -41,4 +41,12 @@ return [
         'lookup_delay' => env('CHOMP_LOOKUP_DELAY', 500), // Delay in milliseconds
     ],
 
+    'fatsecret' => [
+        'consumer_key' => env('FATSECRET_CONSUMER_KEY'),
+        'consumer_secret' => env('FATSECRET_CONSUMER_SECRET'),
+        'access_token' => env('FATSECRET_ACCESS_TOKEN'),
+        'token_expires_at' => env('FATSECRET_TOKEN_EXPIRES_AT'),
+        'lookup_delay' => env('FATSECRET_LOOKUP_DELAY', 500), // Delay in milliseconds
+    ],
+
 ];

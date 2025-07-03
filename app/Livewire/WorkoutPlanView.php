@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Exercise;
 use App\Models\WorkoutPlan;
 use App\Models\WorkoutPlanSchedule;
+use App\Models\WorkoutSession;
 use App\Models\User;
 use App\Models\Message;
 use Illuminate\Support\Facades\Cache;
@@ -29,6 +30,7 @@ class WorkoutPlanView extends Component
     public $selectedClientId = null;
     public $clients = [];
     public $isTrainer = false;
+    public $incompleteWorkouts = [];
 
     public $daysOfWeek = [
         1 => 'Monday',
@@ -42,6 +44,13 @@ class WorkoutPlanView extends Component
 
     public function mount()
     {
+        // Check if user is authenticated
+        if (!auth()->check()) {
+            session()->flash('error', 'Please log in to view your workout plan.');
+            $this->redirect(route('login'));
+            return;
+        }
+        
         $this->workoutPlan = WorkoutPlan::where('user_id', auth()->id())->first();
         $this->exercises = Exercise::orderBy('name')->get();
         $this->currentWeek = Carbon::now()->isoWeek();
@@ -52,6 +61,63 @@ class WorkoutPlanView extends Component
         if ($this->isTrainer) {
             $this->clients = $user->clients()->orderBy('name')->get();
         }
+        
+        // Load incomplete workouts
+        $this->loadIncompleteWorkouts();
+    }
+
+    protected function loadIncompleteWorkouts()
+    {
+        if (!$this->workoutPlan) {
+            $this->incompleteWorkouts = [];
+            return;
+        }
+
+        // Get incomplete workout sessions (in_progress, planned, or recently skipped)
+        $incompleteSessions = WorkoutSession::where('workout_plan_id', $this->workoutPlan->id)
+            ->where('user_id', auth()->id())
+            ->where(function($query) {
+                $query->whereIn('status', ['in_progress', 'planned'])
+                      ->orWhere(function($q) {
+                          $q->where('status', 'skipped')
+                            ->where('date', '>=', now()->subDays(7)); // Only show skipped workouts from last 7 days
+                      });
+            })
+            ->orderBy('date', 'desc')
+            ->with(['exerciseSets.exercise'])
+            ->get();
+
+        $this->incompleteWorkouts = $incompleteSessions->map(function ($session) {
+            // Convert day_of_week string to proper day name
+            $dayName = ucfirst($session->day_of_week);
+            
+            // Get exercises that are not completed
+            $incompleteExercises = $session->exerciseSets()
+                ->where('completed', false)
+                ->with('exercise')
+                ->get()
+                ->groupBy('exercise_id')
+                ->map(function ($sets) {
+                    $firstSet = $sets->first();
+                    return [
+                        'exercise_name' => $firstSet->exercise->name,
+                        'sets_count' => $sets->count(),
+                        'completed_sets' => $sets->where('completed', true)->count(),
+                    ];
+                })
+                ->values();
+
+            return [
+                'id' => $session->id,
+                'date' => $session->date,
+                'day_name' => $dayName,
+                'week_number' => $session->week_number,
+                'status' => $session->status,
+                'incomplete_exercises' => $incompleteExercises,
+                'total_exercises' => $session->exerciseSets()->distinct('exercise_id')->count(),
+                'completed_exercises' => $session->exerciseSets()->where('completed', true)->distinct('exercise_id')->count(),
+            ];
+        })->toArray();
     }
 
     public function togglePrintModal()
@@ -75,6 +141,61 @@ class WorkoutPlanView extends Component
         $this->targetWeek = null;
         $this->targetDay = null;
         $this->selectedClientId = null;
+    }
+
+    public function refreshIncompleteWorkouts()
+    {
+        $this->loadIncompleteWorkouts();
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'message' => 'Incomplete workouts refreshed'
+        ]);
+    }
+
+    public function skipWorkout($workoutId)
+    {
+        try {
+            $workout = WorkoutSession::where('id', $workoutId)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if ($workout) {
+                $workout->update(['status' => 'skipped']);
+                $this->loadIncompleteWorkouts();
+                $this->dispatch('notify', [
+                    'type' => 'success',
+                    'message' => 'Workout marked as skipped'
+                ]);
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'Failed to skip workout'
+            ]);
+        }
+    }
+
+    public function resumeWorkout($workoutId)
+    {
+        try {
+            $workout = WorkoutSession::where('id', $workoutId)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if ($workout) {
+                $workout->update(['status' => 'in_progress']);
+                $this->loadIncompleteWorkouts();
+                $this->dispatch('notify', [
+                    'type' => 'success',
+                    'message' => 'Workout resumed'
+                ]);
+            }
+        } catch (\Exception $e) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'Failed to resume workout'
+            ]);
+        }
     }
 
     public function copyWorkout()
@@ -427,11 +548,15 @@ class WorkoutPlanView extends Component
             }
         }
 
+        // Reload incomplete workouts
+        $this->loadIncompleteWorkouts();
+
         return view('livewire.workout-plan-view', [
             'weekSchedule' => $this->weekSchedule,
             'daysOfWeek' => $this->daysOfWeek,
             'isTrainer' => $this->isTrainer,
-            'clients' => $this->clients
+            'clients' => $this->clients,
+            'incompleteWorkouts' => $this->incompleteWorkouts
         ]);
     }
 } 

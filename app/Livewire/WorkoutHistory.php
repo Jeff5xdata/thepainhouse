@@ -76,7 +76,8 @@ class WorkoutHistory extends Component
     public function render()
     {
         $query = WorkoutSession::with(['workoutPlan', 'exerciseSets.exercise'])
-            ->where('user_id', auth()->id());
+            ->where('user_id', auth()->id())
+            ->orderBy('completed_at', 'desc');
 
         if ($this->search) {
             $query->whereHas('workoutPlan', function($q) {

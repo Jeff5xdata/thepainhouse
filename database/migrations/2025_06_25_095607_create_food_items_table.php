@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('brand')->nullable();
-            $table->string('barcode')->unique()->nullable();
+            $table->string('barcode')->nullable();
             $table->string('serving_size')->nullable();
             $table->decimal('calories', 8, 2)->default(0);
             $table->decimal('protein', 8, 2)->default(0);
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->decimal('sodium', 8, 2)->default(0);
             $table->decimal('cholesterol', 8, 2)->default(0);
             $table->string('image_url')->nullable();
-            $table->string('chomp_id')->nullable();
+            $table->string('fatsecret_id')->nullable();
             $table->timestamps();
             
             $table->index(['name', 'brand']);

@@ -21,21 +21,18 @@ class WorkoutPlanSchedule extends Model
         'week_number',
         'day_of_week',
         'order_in_day',
-        'is_time_based',
-        'notes',
         'set_details',
     ];
 
     protected $casts = [
-        'is_time_based' => 'boolean',
         'week_number' => 'integer',
+        'day_of_week' => 'integer',
         'order_in_day' => 'integer',
         'set_details' => 'array',
     ];
 
     protected $attributes = [
         'order_in_day' => 0,
-        'is_time_based' => false,
     ];
 
     public function workoutPlan(): BelongsTo
@@ -72,7 +69,43 @@ class WorkoutPlanSchedule extends Model
             throw new \Exception("set_details is required but empty for schedule item ID: {$this->id}. Please ensure set_details is properly initialized.");
         }
 
-        return $this->set_details;
+        // Ensure set_details is an array
+        $setDetails = is_string($this->set_details) ? json_decode($this->set_details, true) : $this->set_details;
+        
+        if (!is_array($setDetails)) {
+            throw new \Exception("set_details is not a valid array for schedule item ID: {$this->id}");
+        }
+
+        // Handle both old and new JSON structures
+        if (isset($setDetails['sets'])) {
+            return $setDetails['sets'];
+        }
+
+        return $setDetails;
+    }
+
+    /**
+     * Get exercise configuration from set_details
+     */
+    public function getExerciseConfigAttribute(): array
+    {
+        if (empty($this->set_details)) {
+            return [];
+        }
+
+        // Ensure set_details is an array
+        $setDetails = is_string($this->set_details) ? json_decode($this->set_details, true) : $this->set_details;
+        
+        if (!is_array($setDetails)) {
+            return [];
+        }
+
+        if (isset($setDetails['exercise_config'])) {
+            return $setDetails['exercise_config'];
+        }
+
+        // Return empty config for old structure
+        return [];
     }
 
     /**

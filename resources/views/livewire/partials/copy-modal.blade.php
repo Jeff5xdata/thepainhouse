@@ -47,8 +47,11 @@
                                         Target Week
                                     </label>
                                     <select wire:model="targetWeek" id="targetWeek" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                        @for($week = 1; $week <= $workoutPlan->weeks_duration; $week++)
-                                            <option value="{{ $week }}">Week {{ $week }}</option>
+                                        @php
+                                            $currentWeek = \Carbon\Carbon::now()->isoWeek();
+                                        @endphp
+                                        @for($week = $currentWeek; $week < $currentWeek + $workoutPlan->weeks_duration; $week++)
+                                            <option value="{{ $week }}">ISO Week {{ $week }}</option>
                                         @endfor
                                     </select>
                                 </div>

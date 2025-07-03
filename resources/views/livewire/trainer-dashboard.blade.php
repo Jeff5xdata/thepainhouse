@@ -88,13 +88,40 @@
                                         </svg>
                                         View Progress
                                     </button>
+                                    <button 
+                                        wire:click="viewClientProgressCharts({{ $selectedClient->id }})"
+                                        class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
+                                    >
+                                        <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                        Charts
+                                    </button>
+                                    <button 
+                                        wire:click="viewClientWeightTracker({{ $selectedClient->id }})"
+                                        class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
+                                    >
+                                        <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                        </svg>
+                                        Weight
+                                    </button>
+                                    <button 
+                                        wire:click="viewClientBodyMeasurements({{ $selectedClient->id }})"
+                                        class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200"
+                                    >
+                                        <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        Body
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Stats Grid -->
                         <div class="p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
                                 <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0">
@@ -150,10 +177,50 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Weight</p>
+                                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                                                @if($clientStats['current_weight'])
+                                                    {{ number_format($clientStats['current_weight'], 1) }} kg
+                                                @else
+                                                    -
+                                                @endif
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-4">
+                                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current BMI</p>
+                                            <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                                                @if($clientStats['current_bmi'])
+                                                    {{ number_format($clientStats['current_bmi'], 1) }}
+                                                @else
+                                                    -
+                                                @endif
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Recent Activity -->
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
                                 <!-- Recent Workouts -->
                                 <div>
                                     <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Recent Workouts</h4>
@@ -202,6 +269,58 @@
                                             </div>
                                         @empty
                                             <p class="text-sm text-gray-500 dark:text-gray-400">No recent nutrition logs</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+
+                                <!-- Recent Weight Measurements -->
+                                <div>
+                                    <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Recent Weight</h4>
+                                    <div class="space-y-3">
+                                        @forelse($recentWeightMeasurements as $measurement)
+                                            <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                                <div class="flex-shrink-0">
+                                                    <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                                    </svg>
+                                                </div>
+                                                <div class="ml-3 flex-1">
+                                                    <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                                        {{ number_format($measurement->weight_in_kg, 1) }} kg
+                                                    </p>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                        {{ $measurement->created_at->diffForHumans() }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">No recent weight measurements</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+
+                                <!-- Recent Body Measurements -->
+                                <div>
+                                    <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Recent Body Measurements</h4>
+                                    <div class="space-y-3">
+                                        @forelse($recentBodyMeasurements as $measurement)
+                                            <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                                <div class="flex-shrink-0">
+                                                    <svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                    </svg>
+                                                </div>
+                                                <div class="ml-3 flex-1">
+                                                    <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                                        BMI: {{ number_format($measurement->bmi, 1) }}
+                                                    </p>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                        {{ $measurement->created_at->diffForHumans() }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        @empty
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">No recent body measurements</p>
                                         @endforelse
                                     </div>
                                 </div>

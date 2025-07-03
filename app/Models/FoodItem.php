@@ -24,7 +24,7 @@ class FoodItem extends Model
         'sodium',
         'cholesterol',
         'image_url',
-        'chomp_id',
+        'fatsecret_id',
     ];
 
     protected $casts = [

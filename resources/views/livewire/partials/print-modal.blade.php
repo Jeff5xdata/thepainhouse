@@ -21,9 +21,13 @@
                         <p class="text-gray-600 dark:text-gray-400 mb-6">{{ $workoutPlan->description }}</p>
                         @endif
                         <div class="space-y-8">
-                            @for($week = 1; $week <= $workoutPlan->weeks_duration; $week++)
+                            @php
+                                $currentWeek = \Carbon\Carbon::now()->isoWeek();
+                                $startWeek = $currentWeek;
+                            @endphp
+                            @for($week = $startWeek; $week < $startWeek + $workoutPlan->weeks_duration; $week++)
                                 <div class="border dark:border-gray-700 rounded-lg p-4">
-                                    <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Week {{ $week }}</h4>
+                                    <h4 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">ISO Week {{ $week }}</h4>
                                     <div class="space-y-6">
                                         @foreach($daysOfWeek as $day => $dayName)
                                             @if(isset($weekSchedule[$day]) && count($weekSchedule[$day]) > 0)
