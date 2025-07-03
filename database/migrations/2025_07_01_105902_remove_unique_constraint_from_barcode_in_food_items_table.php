@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::table('food_items', function (Blueprint $table) {
             // Check if the unique constraint exists before trying to drop it
-            $indexes = \DB::select("PRAGMA index_list(food_items)");
-            $constraintExists = collect($indexes)->contains('name', 'food_items_barcode_unique');
+            $indexes = \DB::select("SHOW INDEX FROM food_items WHERE Key_name = 'food_items_barcode_unique'");
+            $constraintExists = count($indexes) > 0;
             
             if ($constraintExists) {
                 $table->dropUnique(['barcode']);

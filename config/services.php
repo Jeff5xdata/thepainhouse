@@ -49,4 +49,8 @@ return [
         'lookup_delay' => env('FATSECRET_LOOKUP_DELAY', 500), // Delay in milliseconds
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
 ];

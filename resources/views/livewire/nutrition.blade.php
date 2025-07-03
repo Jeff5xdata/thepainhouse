@@ -45,7 +45,7 @@
             @if($viewMode === 'daily')
                 <!-- Date Picker for Daily View -->
                 <div class="flex items-center space-x-2 w-full sm:w-auto">
-                    <input type="date" wire:model="selectedDate" 
+                    <input type="date" wire:model.live="selectedDate" 
                            class="w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
             @else
@@ -166,9 +166,19 @@
                 <label for="search" class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">Search by Food Name</label>
                 <div class="relative">
                     <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                        <input type="text" id="search" wire:model="searchQuery" 
-                               placeholder="Type a food name to search..." 
-                               class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <div class="flex-1 relative">
+                            <input type="text" id="search" wire:model.live.debounce.700ms="searchQuery" 
+                                   placeholder="Type a food name to search..." 
+                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            @if($isSearching)
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </div>
+                            @endif
+                        </div>
                         <button wire:click="searchFood" 
                                 class="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ml-2">
                             Search

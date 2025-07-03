@@ -72,6 +72,7 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **Offline Support**: Basic offline functionality with PWA
 -   **Real-time Updates**: Livewire-powered real-time interface updates
 -   **Notification System**: Success/error notifications for user actions
+-   **AI Workout Generation**: AI-powered personalized workout plans using Google's Gemini API
 
 ### Security & Performance
 
@@ -126,7 +127,16 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 
     Get your API credentials from [FatSecret Platform API](https://platform.fatsecret.com/)
 
-7. **Start the development server**
+7. **Configure Gemini API (for AI workout generation)**
+
+    ```bash
+    # Add to your .env file:
+    GEMINI_API_KEY=your_gemini_api_key_here
+    ```
+
+    Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+8. **Start the development server**
     ```bash
     php artisan serve
     ```
@@ -141,6 +151,7 @@ A powerful weightlifting tracking application built with Laravel and Livewire. T
 -   **File Handling**: PhpSpreadsheet for data export/import
 -   **Nutrition API**: FatSecret Platform API for food data and barcode scanning
 -   **Barcode Scanning**: WebRTC camera API for mobile barcode scanning
+-   **AI Integration**: Google Gemini API for AI-powered workout generation
 
 ## 👥 Trainer-Client Workflow
 
@@ -303,6 +314,7 @@ For support and questions:
 -   **Food Tracker**: See `FOOD_TRACKER_README.md` for nutrition tracking features
 -   **Trainer System**: See `TRAINER_SYSTEM_README.md` for trainer-client management
 -   **FatSecret API Setup**: See `FATSECRET_API_SETUP.md` for nutrition API configuration
+-   **AI Workout Generator**: See `AI_WORKOUT_GENERATOR_README.md` for AI-powered workout generation
 
 ---
 

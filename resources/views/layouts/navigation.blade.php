@@ -1,7 +1,7 @@
 @props(['title' => config('app.name', 'The Pain House')])
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full dark" x-data>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark" x-data>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -45,7 +45,7 @@
         </script>
     </head>
     <body 
-        class="font-sans antialiased h-full transition-colors duration-200 bg-gray-100 dark:bg-gray-900"
+        class="font-sans antialiased transition-colors duration-200 bg-gray-100 dark:bg-gray-900"
         x-data="{ 
             darkMode: false,
             menuOpen: false,
@@ -62,7 +62,7 @@
         }"
         x-init="darkMode = localStorage.theme === 'dark' || !localStorage.theme"
     >
-        <div class="min-h-screen">
+        <div>
             <nav class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-16">
@@ -108,6 +108,16 @@
                                         </svg>
                                         {{ __('Workout Planner') }}
                                     </a>
+
+                                    <!-- <a href="{{ route('workout.ai-generator') }}" 
+                                        class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                        @click="menuOpen = false"
+                                        wire:navigate>
+                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                        </svg>
+                                        {{ __('AI Workout Generator') }}
+                                    </a> -->
 
 
                                         <a href="{{ route('workout.plan', 0) }}" 

@@ -31,6 +31,7 @@ class Nutrition extends Component
     public $viewMode = 'daily'; // 'daily' or 'weekly'
     public $selectedWeekStart;
     public $searchResultsRaw = [];
+    public $isSearching = false;
     
     // Edit food log properties
     public $editingFoodLog = null;
@@ -49,6 +50,13 @@ class Nutrition extends Component
 
     public function render()
     {
+        // Log render call for debugging
+        \Log::info('Nutrition component render called', [
+            'viewMode' => $this->viewMode,
+            'selectedDate' => $this->selectedDate,
+            'user_id' => auth()->id()
+        ]);
+        
         if ($this->viewMode === 'weekly') {
             $weeklyData = $this->getWeeklyData();
             return view('livewire.nutrition', [
@@ -124,6 +132,8 @@ class Nutrition extends Component
             ->orderBy('consumed_time', 'desc')
             ->get();
 
+
+
         // Group by date and meal type
         $foodLogs = $weeklyLogs->groupBy('consumed_date')->map(function ($dayLogs) {
             return $dayLogs->groupBy('meal_type');
@@ -170,11 +180,16 @@ class Nutrition extends Component
     {
         $breakdown = [];
         
+
+        
         for ($i = 0; $i < 7; $i++) {
             $date = Carbon::parse($this->selectedWeekStart)->addDays($i)->format('Y-m-d');
             $dayName = Carbon::parse($this->selectedWeekStart)->addDays($i)->format('D');
             
-            $dayLogs = $weeklyLogs->where('consumed_date', $date);
+            // Use filter instead of where for better collection filtering
+            $dayLogs = $weeklyLogs->filter(function ($log) use ($date) {
+                return $log->consumed_date->format('Y-m-d') === $date;
+            });
             
             $dayTotals = [
                 'calories' => 0,
@@ -189,6 +204,8 @@ class Nutrition extends Component
                     $dayTotals[$key] += $nutrition[$key];
                 }
             }
+
+
 
             $breakdown[$date] = [
                 'day_name' => $dayName,
@@ -207,8 +224,11 @@ class Nutrition extends Component
             $this->searchResults = [];
             $this->searchResultsRaw = [];
             $this->showSearchResults = false;
+            $this->isSearching = false;
             return;
         }
+
+        $this->isSearching = true;
 
         // First, search the local database for existing food items
         $localResults = \App\Models\FoodItem::where('name', 'like', '%' . $this->searchQuery . '%')
@@ -271,6 +291,7 @@ class Nutrition extends Component
         }, $results);
         
         $this->showSearchResults = true;
+        $this->isSearching = false;
     }
 
     public function updatedSearchQuery()
@@ -279,11 +300,11 @@ class Nutrition extends Component
         if (strlen($this->searchQuery) < 2) {
             $this->searchResults = [];
             $this->showSearchResults = false;
+            $this->isSearching = false;
             return;
         }
 
-        // Add a small delay to prevent rapid API calls
-        // This works in conjunction with the server-side delay in ChompApiService
+        // The debounce will handle the delay, so we can call searchFood directly
         $this->searchFood();
     }
 
@@ -560,6 +581,21 @@ class Nutrition extends Component
     public function changeDate($date)
     {
         $this->selectedDate = $date;
+    }
+
+    public function updatedSelectedDate()
+    {
+        // Clear search results when date changes
+        $this->searchResults = [];
+        $this->searchResultsRaw = [];
+        $this->showSearchResults = false;
+        $this->searchQuery = '';
+        
+        // Log the date change for debugging
+        \Log::info('Date changed in Nutrition component', [
+            'new_date' => $this->selectedDate,
+            'user_id' => auth()->id()
+        ]);
     }
 
     private function calculateDailyTotals($foodLogs)

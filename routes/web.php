@@ -67,6 +67,7 @@ Route::middleware(['auth', 'verified', 'throttle:120,1'])->group(function () {
     Route::get('/workout/settings', WorkoutSettings::class)->name('workout.settings');
     Route::get('/workout/backup', WorkoutBackup::class)->name('workout.backup');
     Route::get('/workout/backup/download', [WorkoutBackupController::class, 'downloadBackup'])->name('workout.backup.download');
+    Route::get('/workout/ai-generator', \App\Livewire\AiWorkoutGenerator::class)->name('workout.ai-generator');
     
     // Nutrition tracking route
     Route::get('/nutrition', Nutrition::class)->name('nutrition');

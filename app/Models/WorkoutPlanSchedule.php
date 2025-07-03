@@ -21,12 +21,23 @@ class WorkoutPlanSchedule extends Model
         'week_number',
         'day_of_week',
         'order_in_day',
+        'is_time_based',
+        'sets',
+        'reps',
+        'weight',
+        'time_in_seconds',
+        'notes',
+        'has_warmup',
+        'warmup_sets',
+        'warmup_reps',
+        'warmup_time_in_seconds',
+        'warmup_weight_percentage',
         'set_details',
     ];
 
     protected $casts = [
         'week_number' => 'integer',
-        'day_of_week' => 'integer',
+        'day_of_week' => 'string',
         'order_in_day' => 'integer',
         'set_details' => 'array',
     ];
@@ -48,13 +59,13 @@ class WorkoutPlanSchedule extends Model
     public function getDayNameAttribute(): string
     {
         $dayNames = [
-            1 => 'Monday',
-            2 => 'Tuesday',
-            3 => 'Wednesday',
-            4 => 'Thursday',
-            5 => 'Friday',
-            6 => 'Saturday',
-            7 => 'Sunday'
+            '1' => 'Monday',
+            '2' => 'Tuesday',
+            '3' => 'Wednesday',
+            '4' => 'Thursday',
+            '5' => 'Friday',
+            '6' => 'Saturday',
+            '7' => 'Sunday'
         ];
 
         return $dayNames[$this->day_of_week] ?? 'Unknown Day';

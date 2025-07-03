@@ -10,6 +10,12 @@
             </div>
         @endif
 
+        @if (session()->has('error'))
+            <div class="bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded relative mb-4">
+                {{ session('error') }}
+            </div>
+        @endif
+
         <form class="space-y-4 sm:space-y-6">
             <input type="hidden" wire:model="schedule">
             <div>
@@ -371,13 +377,22 @@
             </div>
 
             <div class="flex justify-between items-center space-x-4">
-                <button type="button" wire:click="toggleExerciseModal"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
-                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Exercise
-                </button>
+                <div class="flex space-x-3">
+                    <button type="button" wire:click="toggleExerciseModal"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Exercise
+                    </button>
+                    <!-- <button type="button" wire:click="toggleAiWorkoutModal"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800">
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        Create AI Workout
+                    </button> -->
+                </div>
                 <div class="flex space-x-4">
                     @if($workoutPlan)
                     <button type="button" wire:click="toggleDeleteConfirmModal"
@@ -684,6 +699,134 @@
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- AI Workout Modal -->
+    @if($showAiWorkoutModal)
+    <div class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-middle bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-2xl w-full">
+                <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6">
+                    <div class="sm:flex sm:items-start">
+                        <div class="w-full">
+                            <div class="flex items-center mb-4">
+                                <div class="mx-auto flex items-center justify-center h-10 w-10 rounded-full bg-green-100 dark:bg-green-900 flex-shrink-0">
+                                    <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 ml-3">Create AI Workout</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Your AI-generated workout will be automatically saved to your workout plans.</p>
+                            </div>
+                            
+                            <div class="space-y-6">
+                                <!-- Goal Selection -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fitness Goal</label>
+                                    <select wire:model="aiWorkoutPreferences.goal" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="strength">Strength Training</option>
+                                        <option value="muscle">Muscle Building</option>
+                                        <option value="endurance">Endurance</option>
+                                        <option value="weight_loss">Weight Loss</option>
+                                        <option value="general">General Fitness</option>
+                                    </select>
+                                </div>
+
+                                <!-- Experience Level -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Experience Level</label>
+                                    <select wire:model="aiWorkoutPreferences.experience_level" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="beginner">Beginner</option>
+                                        <option value="intermediate">Intermediate</option>
+                                        <option value="advanced">Advanced</option>
+                                    </select>
+                                </div>
+
+                                <!-- Days Per Week -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Workouts Per Week</label>
+                                    <select wire:model="aiWorkoutPreferences.days_per_week" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="3">3 days</option>
+                                        <option value="4">4 days</option>
+                                        <option value="5">5 days</option>
+                                        <option value="6">6 days</option>
+                                    </select>
+                                </div>
+
+                                <!-- Focus Areas -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Focus Areas (Select all that apply)</label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        @foreach(['chest', 'back', 'legs', 'core'] as $area)
+                                            <label class="flex items-center">
+                                                <input type="checkbox" 
+                                                    wire:model="aiWorkoutPreferences.focus_areas" 
+                                                    value="{{ $area }}"
+                                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300 capitalize">{{ $area }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+
+                                <!-- Equipment Available -->
+                                <div>
+                                    <label for="ai-equipment" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Available Equipment (Optional)</label>
+                                    <div class="mt-1 grid grid-cols-2 gap-2">
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox" value="barbell" wire:model="aiWorkoutPreferences.equipment_available" class="form-checkbox">
+                                            <span class="ml-2">Barbell</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox" value="bodyweight" wire:model="aiWorkoutPreferences.equipment_available" class="form-checkbox">
+                                            <span class="ml-2">Bodyweight</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox" value="kettlebells" wire:model="aiWorkoutPreferences.equipment_available" class="form-checkbox">
+                                            <span class="ml-2">Kettlebells</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox" value="machine" wire:model="aiWorkoutPreferences.equipment_available" class="form-checkbox">
+                                            <span class="ml-2">Machine</span>
+                                        </label>
+                                        <label class="inline-flex items-center">
+                                            <input type="checkbox" value="dumbbells" wire:model="aiWorkoutPreferences.equipment_available" class="form-checkbox">
+                                            <span class="ml-2">Dumbbells</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Time Per Workout -->
+                                <div>
+                                    <label for="ai-weeks-duration" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mt-4">Weeks Duration</label>
+                                    <input type="number" min="1" max="12" wire:model="aiWorkoutPreferences.weeks_duration" id="ai-weeks-duration" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100" placeholder="1-12">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" wire:click="generateAiWorkout"
+                        class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm dark:bg-green-500 dark:hover:bg-green-400"
+                        wire:loading.class="opacity-50"
+                        wire:loading.attr="disabled">
+                        <svg wire:loading class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span wire:loading.remove>Generate & Save Workout</span>
+                        <span wire:loading>Generating & Saving...</span>
+                    </button>
+                    <button type="button" wire:click="toggleAiWorkoutModal"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
                 </div>
             </div>
         </div>

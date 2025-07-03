@@ -35,6 +35,7 @@ class WorkoutPlanner extends Component
     public $showConfirmModal = false;
     public $showDeleteConfirmModal = false;
     public $showPrintModal = false;
+    public $showAiWorkoutModal = false;
     public $selectedExercise = null;
     public $exerciseModal = false;
     public $categories;
@@ -48,6 +49,16 @@ class WorkoutPlanner extends Component
     public $debugMessage = '';
     public $oldestWeek = 1;
     public $newestWeek = 1;
+    
+    // AI Workout properties
+    public $aiWorkoutPreferences = [
+        'goal' => 'strength',
+        'experience_level' => 'intermediate',
+        'days_per_week' => 3,
+        'focus_areas' => [],
+        'equipment_available' => [],
+        'time_per_workout' => 60
+    ];
 
     public $daysOfWeek = [
         1 => 'Monday',
@@ -76,7 +87,20 @@ class WorkoutPlanner extends Component
         }
         
         $this->exercises = Exercise::orderBy('name')->get();
-        $this->categories = config('exercises.categories');
+        $this->categories = config('exercises.categories', [
+            'chest' => 'Chest',
+            'back' => 'Back',
+            'legs' => 'Legs',
+            'shoulders' => 'Shoulders',
+            'biceps' => 'Biceps',
+            'triceps' => 'Triceps',
+            'abs' => 'Abs',
+            'core' => 'Core',
+            'glutes' => 'Glutes',
+            'cardio' => 'Cardio',
+            'full_body' => 'Full Body',
+            'other' => 'Other',
+        ]);
         
         if ($plan_id) {
             // Load specific plan for editing
@@ -163,7 +187,7 @@ class WorkoutPlanner extends Component
         // Only calculate weeks_duration if not already set from database
         if (!isset($this->weeks_duration) || $this->weeks_duration <= 0) {
             $currentWeek = Carbon::now()->isoWeek();
-            $this->weeks_duration = max($currentWeek - $this->oldestWeek + 1, 1);
+            $this->weeks_duration = max($currentWeek - (int)$this->oldestWeek + 1, 1);
         }
         
         \Log::info('Calculated week range', [
@@ -207,8 +231,8 @@ class WorkoutPlanner extends Component
     public function getWeekRange()
     {
         $currentWeek = Carbon::now()->isoWeek();
-        $endWeek = max($this->oldestWeek + $this->weeks_duration - 1, $currentWeek);
-        return range($this->oldestWeek, $endWeek);
+        $endWeek = max((int)$this->oldestWeek + (int)$this->weeks_duration - 1, $currentWeek);
+        return range((int)$this->oldestWeek, $endWeek);
     }
 
     /**
@@ -417,15 +441,15 @@ class WorkoutPlanner extends Component
     {
         // Ensure current week doesn't exceed the calculated range
         $currentWeek = Carbon::now()->isoWeek();
-        $maxWeek = $this->oldestWeek + $this->weeks_duration - 1;
+        $maxWeek = (int)$this->oldestWeek + (int)$this->weeks_duration - 1;
         
         if ($this->currentWeek > $maxWeek) {
             $this->currentWeek = $maxWeek;
         }
         
         // Ensure current week is not less than oldest week
-        if ($this->currentWeek < $this->oldestWeek) {
-            $this->currentWeek = $this->oldestWeek;
+        if ($this->currentWeek < (int)$this->oldestWeek) {
+            $this->currentWeek = (int)$this->oldestWeek;
         }
     }
 
@@ -450,6 +474,274 @@ class WorkoutPlanner extends Component
     public function togglePrintModal()
     {
         $this->showPrintModal = !$this->showPrintModal;
+    }
+
+    public function toggleAiWorkoutModal()
+    {
+        $this->showAiWorkoutModal = !$this->showAiWorkoutModal;
+    }
+
+    public function generateAiWorkout()
+    {
+        \Log::info('AI Workout generation started', [
+            'preferences' => $this->aiWorkoutPreferences
+        ]);
+        
+        // Validate preferences
+        if (empty($this->aiWorkoutPreferences['focus_areas'])) {
+            session()->flash('error', 'Please select at least one focus area.');
+            \Log::warning('AI Workout generation failed: No focus areas selected');
+            return;
+        }
+
+        // Set weeks_duration from preferences (default to 1)
+        $this->weeks_duration = isset($this->aiWorkoutPreferences['weeks_duration']) && $this->aiWorkoutPreferences['weeks_duration'] ? (int)$this->aiWorkoutPreferences['weeks_duration'] : 1;
+
+        // Clear current schedule
+        $this->schedule = [];
+        
+        \Log::info('Schedule cleared, starting AI generation');
+        
+        // Generate workout based on preferences
+        $this->generateWorkoutFromAi();
+        
+        \Log::info('AI generation completed', [
+            'schedule_count' => is_array($this->schedule) ? count($this->schedule) : 'not array',
+            'schedule' => $this->schedule
+        ]);
+        
+        // Auto-save the generated workout
+        $this->saveAiWorkout();
+        
+        // Close modal
+        $this->toggleAiWorkoutModal();
+    }
+
+    protected function saveAiWorkout()
+    {
+        // Generate a default name for the AI workout
+        $goal = $this->aiWorkoutPreferences['goal'];
+        $daysPerWeek = $this->aiWorkoutPreferences['days_per_week'];
+        $focusAreas = implode(', ', $this->aiWorkoutPreferences['focus_areas']);
+        $weeksDuration = $this->weeks_duration;
+        
+        $this->name = "AI {$goal} Workout - {$daysPerWeek} days ({$focusAreas})";
+        $this->description = "AI-generated workout plan for {$goal} training, {$daysPerWeek} days per week, focusing on {$focusAreas}.";
+        $this->weeks_duration = $weeksDuration;
+        
+        \Log::info('Auto-saving AI workout', [
+            'name' => $this->name,
+            'description' => $this->description,
+            'weeks_duration' => $this->weeks_duration
+        ]);
+        
+        // Call the save method
+        $this->save();
+    }
+
+    protected function generateWorkoutFromAi()
+    {
+        $daysPerWeek = $this->aiWorkoutPreferences['days_per_week'];
+        $goal = $this->aiWorkoutPreferences['goal'];
+        $experienceLevel = $this->aiWorkoutPreferences['experience_level'];
+        $focusAreas = $this->aiWorkoutPreferences['focus_areas'];
+        $equipmentAvailable = $this->aiWorkoutPreferences['equipment_available'];
+        
+        // Get exercises based on focus areas and equipment
+        $exercises = $this->getExercisesForAiWorkout($focusAreas, $equipmentAvailable);
+        
+        if ($exercises->isEmpty()) {
+            session()->flash('error', 'No exercises found for your selected preferences.');
+            return;
+        }
+        
+        // Generate workout schedule
+        $this->generateWorkoutSchedule($exercises, $daysPerWeek, $goal, $experienceLevel);
+    }
+
+    protected function getExercisesForAiWorkout($focusAreas, $equipmentAvailable)
+    {
+        $query = Exercise::query();
+        
+        \Log::info('Getting exercises for AI workout', [
+            'focus_areas' => $focusAreas,
+            'equipment_available' => $equipmentAvailable
+        ]);
+        
+        // Filter by focus areas (muscle groups)
+        if (!empty($focusAreas)) {
+            $query->whereIn('category', $focusAreas);
+        }
+        
+        // Filter by equipment if specified
+        if (!empty($equipmentAvailable)) {
+            $query->where(function($q) use ($equipmentAvailable) {
+                foreach ($equipmentAvailable as $equipment) {
+                    $q->orWhere('equipment', 'LIKE', "%{$equipment}%");
+                }
+            });
+        }
+        
+        $exercises = $query->orderBy('name')->get();
+        
+        \Log::info('Found exercises for AI workout', [
+            'exercise_count' => $exercises->count(),
+            'exercise_categories' => $exercises->pluck('category')->unique()->toArray(),
+            'exercise_names' => $exercises->pluck('name')->toArray()
+        ]);
+        
+        return $exercises;
+    }
+
+    protected function generateWorkoutSchedule($exercises, $daysPerWeek, $goal, $experienceLevel)
+    {
+        $currentWeek = Carbon::now()->isoWeek();
+        $this->oldestWeek = $currentWeek;
+        $this->newestWeek = $currentWeek;
+        
+        // Group exercises by muscle groups
+        $exerciseGroups = $this->groupExercisesByMuscleGroups($exercises);
+        
+        // Create workout split based on days per week
+        $workoutSplit = $this->createWorkoutSplit($exerciseGroups, $daysPerWeek, $goal);
+        
+        \Log::info('Created workout split', [
+            'workout_split' => $workoutSplit,
+            'exercise_groups' => array_keys($exerciseGroups),
+            'days_per_week' => $daysPerWeek,
+            'goal' => $goal
+        ]);
+        
+        // Apply the workout to the schedule
+        $this->applyWorkoutToSchedule($workoutSplit, $currentWeek);
+    }
+
+    protected function groupExercisesByMuscleGroups($exercises)
+    {
+        $groups = [];
+        foreach ($exercises as $exercise) {
+            $category = $exercise->category;
+            if (!isset($groups[$category])) {
+                $groups[$category] = [];
+            }
+            $groups[$category][] = $exercise;
+        }
+        return $groups;
+    }
+
+    protected function createWorkoutSplit($exerciseGroups, $daysPerWeek, $goal)
+    {
+        $split = [];
+        
+        switch ($daysPerWeek) {
+            case 3:
+                // Push/Pull/Legs or Full Body
+                if ($goal === 'strength') {
+                    $split = [
+                        1 => ['chest'], // Push
+                        3 => ['back'], // Pull
+                        5 => ['legs'] // Legs
+                    ];
+                } else {
+                    // Full body
+                    $split = [
+                        1 => array_keys($exerciseGroups),
+                        3 => array_keys($exerciseGroups),
+                        5 => array_keys($exerciseGroups)
+                    ];
+                }
+                break;
+                
+            case 4:
+                $split = [
+                    1 => ['chest'],
+                    2 => ['back'],
+                    4 => ['core'],
+                    5 => ['legs']
+                ];
+                break;
+                
+            case 5:
+                $split = [
+                    1 => ['chest'],
+                    2 => ['back'],
+                    3 => ['core'],
+                    4 => ['legs'],
+                    5 => ['core']
+                ];
+                break;
+                
+            default:
+                // Default to full body
+                $split = [
+                    1 => array_keys($exerciseGroups),
+                    3 => array_keys($exerciseGroups),
+                    5 => array_keys($exerciseGroups)
+                ];
+        }
+        
+        return $split;
+    }
+
+    protected function applyWorkoutToSchedule($workoutSplit, $currentWeek)
+    {
+        $userSettings = auth()->user()->workoutSettings;
+        
+        \Log::info('Applying workout to schedule', [
+            'workout_split' => $workoutSplit,
+            'current_week' => $currentWeek,
+            'user_settings' => $userSettings ? 'available' : 'not available'
+        ]);
+        
+        foreach ($workoutSplit as $day => $muscleGroups) {
+            $exerciseIndex = 0;
+            
+            \Log::info("Processing day {$day} with muscle groups: " . implode(', ', $muscleGroups));
+            
+            foreach ($muscleGroups as $muscleGroup) {
+                // Get exercises for this muscle group
+                $exercises = Exercise::where('category', $muscleGroup)->get();
+                
+                \Log::info("Found {$exercises->count()} exercises for muscle group: {$muscleGroup}");
+                
+                if ($exercises->isEmpty()) {
+                    \Log::warning("No exercises found for muscle group: {$muscleGroup}");
+                    continue;
+                }
+                
+                // Select 2-3 exercises per muscle group
+                $selectedExercises = $exercises->random(min(3, $exercises->count()));
+                
+                \Log::info("Selected " . $selectedExercises->count() . " exercises for {$muscleGroup}: " . $selectedExercises->pluck('name')->implode(', '));
+                
+                foreach ($selectedExercises as $exercise) {
+                    $this->schedule[$currentWeek][$day][] = [
+                        'exercise_id' => $exercise->id,
+                        'exercise' => $exercise,
+                        'is_time_based' => false,
+                        'notes' => '',
+                        'set_details' => [],
+                        'has_warmup' => $userSettings && $userSettings->default_warmup_sets > 0,
+                        'warmup_sets' => $userSettings ? $userSettings->default_warmup_sets : 2,
+                        'warmup_reps' => $userSettings ? $userSettings->default_warmup_reps : 10,
+                        'warmup_time_in_seconds' => null,
+                        'warmup_weight_percentage' => $userSettings ? $userSettings->warmup_weight_percentage : null,
+                        'sets' => $userSettings ? $userSettings->default_work_sets : 3,
+                        'reps' => $userSettings ? $userSettings->default_work_reps : 10,
+                        'weight' => null,
+                        'time_in_seconds' => null,
+                    ];
+                    
+                    $this->regenerateSetDetails($currentWeek, $day, $exerciseIndex);
+                    $exerciseIndex++;
+                }
+            }
+        }
+        
+        \Log::info('Final schedule after AI generation', [
+            'schedule' => $this->schedule,
+            'schedule_count' => is_array($this->schedule) ? count($this->schedule) : 'not array'
+        ]);
     }
 
     public function addExercise($week, $day, $exerciseId)
@@ -646,11 +938,18 @@ class WorkoutPlanner extends Component
     {
         \Log::info('Save method called');
         
-        $this->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'weeks_duration' => 'required|integer|min:1',
-        ]);
+        try {
+            $this->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'weeks_duration' => 'required|integer|min:1',
+            ]);
+            
+            \Log::info('Validation passed');
+        } catch (\Exception $e) {
+            \Log::error('Validation failed: ' . $e->getMessage());
+            throw $e;
+        }
 
         // Debug: Log the schedule data
         \Log::info('Saving workout plan', [
@@ -716,7 +1015,7 @@ class WorkoutPlanner extends Component
                             'workout_plan_id' => $this->workoutPlan->id,
                             'exercise_id' => $exercise['exercise_id'],
                             'week_number' => $week,
-                            'day_of_week' => (int)$day, // Ensure day is an integer
+                            'day_of_week' => (string)$day, // Ensure day is a string
                             'order_in_day' => $index + 1,
                             'set_details' => json_encode($comprehensiveSetDetails),
                             'created_at' => now(),
@@ -728,10 +1027,23 @@ class WorkoutPlanner extends Component
 
             DB::commit();
             
-            session()->flash('message', $this->workoutPlan ? 'Workout plan updated successfully!' : 'Workout plan created successfully!');
+            session()->flash('message', $this->workoutPlan ? 'Workout plan updated successfully!' : 'AI workout plan created and saved successfully!');
             
-            // Redirect to the dashboard
-            return $this->redirect(route('dashboard'), navigate: true);
+            // Check if this was called from AI workout generation
+            $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
+            $isAiWorkout = false;
+            
+            foreach ($backtrace as $trace) {
+                if (isset($trace['function']) && $trace['function'] === 'saveAiWorkout') {
+                    $isAiWorkout = true;
+                    break;
+                }
+            }
+            
+            // Only redirect if it's not an AI workout (let AI workouts stay on the page)
+            if (!$isAiWorkout) {
+                return $this->redirect(route('dashboard'), navigate: true);
+            }
 
         } catch (\Exception $e) {
             DB::rollBack();
