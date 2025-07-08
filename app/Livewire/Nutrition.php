@@ -485,6 +485,9 @@ class Nutrition extends Component
 
         $this->reset(['quantity', 'notes', 'selectedFoodItem', 'showAddFoodModal']);
         session()->flash('success', 'Food item added to your log.');
+        
+        // Refresh the page after successful save
+        $this->dispatch('refresh-page');
     }
 
     public function deleteFoodLog($logId)
@@ -492,6 +495,9 @@ class Nutrition extends Component
         $foodLog = FoodLog::where('user_id', auth()->id())->findOrFail($logId);
         $foodLog->delete();
         session()->flash('success', 'Food item removed from your log.');
+        
+        // Refresh the page after successful delete
+        $this->dispatch('refresh-page');
     }
 
     public function addItemAgain($foodItemId, $mealType)
@@ -511,6 +517,9 @@ class Nutrition extends Component
         ]);
 
         session()->flash('success', 'Added another serving of ' . $foodItem->display_name);
+        
+        // Refresh the page after successful save
+        $this->dispatch('refresh-page');
     }
 
     public function editFoodLog($logId)
@@ -545,6 +554,9 @@ class Nutrition extends Component
 
         $this->cancelEdit();
         session()->flash('success', 'Food item updated successfully.');
+        
+        // Refresh the page after successful update
+        $this->dispatch('refresh-page');
     }
 
     public function cancelEdit()
@@ -576,6 +588,9 @@ class Nutrition extends Component
         $this->barcode = '049000006000'; // Sample barcode
         $this->searchByBarcode();
         session()->flash('success', 'Test barcode processed: ' . $this->barcode);
+        
+        // Refresh the page after successful test
+        $this->dispatch('refresh-page');
     }
 
     public function changeDate($date)

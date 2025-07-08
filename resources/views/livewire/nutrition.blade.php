@@ -467,6 +467,14 @@
             }
         }
         
+        // Listen for refresh-page event from Livewire
+        Livewire.on('refresh-page', () => {
+            // Small delay to ensure the success message is shown before refresh
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        });
+        
         Livewire.on('toggleBarcodeScanner', (show) => {
             if (show && !barcodeScanner) {
                 updateScannerStatus('Loading barcode scanner...');
