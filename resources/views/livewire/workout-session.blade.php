@@ -137,7 +137,7 @@
                                                         <div class="flex items-center space-x-2">
                                                             <span class="text-gray-600 dark:text-gray-400">Last:</span>
                                                             <span class="font-medium text-gray-900 dark:text-gray-100">
-                                                                {{ number_format($lastWorkouts[$scheduleItem->exercise_id]['weight'], 1) }} lb × {{ $lastWorkouts[$scheduleItem->exercise_id]['reps'] }} reps
+                                                                {{ number_format($lastWorkouts[$scheduleItem->exercise_id]['weight'], 1) }} {{ strtoupper($this->getPreferredWeightUnit()) }} × {{ $lastWorkouts[$scheduleItem->exercise_id]['reps'] }} reps
                                                             </span>
                                                         </div>
                                                     @endif
@@ -186,7 +186,7 @@
                                                                             @if($session['is_time_based'])
                                                                                 {{ $session['time_in_seconds'] }}s
                                                                             @else
-                                                                                {{ number_format($session['weight'], 1) }} lb × {{ $session['reps'] }} reps
+                                                                                {{ number_format($session['weight'], 1) }} {{ strtoupper($this->getPreferredWeightUnit()) }} × {{ $session['reps'] }} reps
                                                                             @endif
                                                                         </span>
                                                                     </div>
@@ -217,7 +217,7 @@
                                                             </div>
                                                             <div>
                                                                 <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">&nbsp;</label>
-                                                                <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Weight (lb)</label>
+                                                                <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Weight ({{ strtoupper($this->getPreferredWeightUnit()) }})</label>
                                                                 <input type="number"
                                                                     wire:model="setWeights.{{ $scheduleItem->exercise_id }}.warmup.{{ $set['set_number'] }}"
                                                                     step="0.5"
@@ -256,7 +256,7 @@
                                                                         @if($session['is_time_based'])
                                                                             {{ $session['time_in_seconds'] }}s
                                                                         @else
-                                                                            {{ number_format($session['weight'], 1) }} lb × {{ $session['reps'] }} reps
+                                                                            {{ number_format($session['weight'], 1) }} {{ strtoupper($this->getPreferredWeightUnit()) }} × {{ $session['reps'] }} reps
                                                                         @endif
                                                                     </span>
                                                                 </div>
@@ -297,7 +297,7 @@
                                                                 @if($scheduleItem->is_time_based)
                                                                     Notes
                                                                 @else
-                                                                    Weight (lb)
+                                                                    Weight ({{ strtoupper($this->getPreferredWeightUnit()) }})
                                                                 @endif
                                                             </label>
                                                             @if($scheduleItem->is_time_based)
@@ -432,7 +432,7 @@
                                                         <div class="flex items-center space-x-2">
                                                             <span class="text-gray-600 dark:text-gray-400">Last:</span>
                                                             <span class="font-medium text-gray-900 dark:text-gray-100">
-                                                                {{ number_format($lastWorkouts[$scheduleItem->exercise_id]['weight'], 1) }} lb × {{ $lastWorkouts[$scheduleItem->exercise_id]['reps'] }} reps
+                                                                {{ number_format($lastWorkouts[$scheduleItem->exercise_id]['weight'], 1) }} {{ strtoupper($this->getPreferredWeightUnit()) }} × {{ $lastWorkouts[$scheduleItem->exercise_id]['reps'] }} reps
                                                             </span>
                                                         </div>
                                                     @endif
@@ -481,7 +481,7 @@
                                                                             @if($session['is_time_based'])
                                                                                 {{ $session['time_in_seconds'] }}s
                                                                             @else
-                                                                                {{ number_format($session['weight'], 1) }} lb × {{ $session['reps'] }} reps
+                                                                                {{ number_format($session['weight'], 1) }} {{ strtoupper($this->getPreferredWeightUnit()) }} × {{ $session['reps'] }} reps
                                                                             @endif
                                                                         </span>
                                                                     </div>
@@ -512,7 +512,7 @@
                                                             </div>
                                                             <div>
                                                                 <label class="block text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 mb-1">&nbsp;</label>
-                                                                <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Weight (lb)</label>
+                                                                <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Weight ({{ strtoupper($this->getPreferredWeightUnit()) }})</label>
                                                                 <input type="number"
                                                                     wire:model="setWeights.{{ $scheduleItem->exercise_id }}.warmup.{{ $set['set_number'] }}"
                                                                     step="0.5"
@@ -551,7 +551,7 @@
                                                                         @if($session['is_time_based'])
                                                                             {{ $session['time_in_seconds'] }}s
                                                                         @else
-                                                                            {{ number_format($session['weight'], 1) }} lb × {{ $session['reps'] }} reps
+                                                                            {{ number_format($session['weight'], 1) }} {{ strtoupper($this->getPreferredWeightUnit()) }} × {{ $session['reps'] }} reps
                                                                         @endif
                                                                     </span>
                                                                 </div>
@@ -592,7 +592,7 @@
                                                                 @if($scheduleItem->is_time_based)
                                                                     Notes
                                                                 @else
-                                                                    Weight (lb)
+                                                                    Weight ({{ strtoupper($this->getPreferredWeightUnit()) }})
                                                                 @endif
                                                             </label>
                                                             @if($scheduleItem->is_time_based)

@@ -320,7 +320,7 @@
 
             <!-- Page Content -->
             <main class="dark:bg-gray-900">
-                {{ $slot }}
+                @yield('content')
             </main>
         </div>
     </body>

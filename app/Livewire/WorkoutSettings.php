@@ -15,6 +15,7 @@ class WorkoutSettings extends Component
     public $defaultWarmupWeightPercentage = 50;
     public $defaultWorkSets = 3;
     public $defaultWorkReps = 10;
+    public $weightUnitPreference = 'kg';
 
     public function mount()
     {
@@ -40,6 +41,9 @@ class WorkoutSettings extends Component
                 'default_work_reps' => $this->defaultWorkReps,
             ]);
         }
+
+        // Load user's weight unit preference
+        $this->weightUnitPreference = auth()->user()->getPreferredWeightUnit();
     }
 
     public function saveSettings()
@@ -52,6 +56,7 @@ class WorkoutSettings extends Component
             'defaultWarmupWeightPercentage' => 'required|integer|min:10|max:90',
             'defaultWorkSets' => 'required|integer|min:1|max:10',
             'defaultWorkReps' => 'required|integer|min:1|max:30',
+            'weightUnitPreference' => 'required|in:kg,lbs',
         ]);
 
         // Update or create settings in database
@@ -66,6 +71,11 @@ class WorkoutSettings extends Component
                 'default_work_reps' => $this->defaultWorkReps,
             ]
         );
+
+        // Update user's weight unit preference
+        auth()->user()->update([
+            'weight_unit_preference' => $this->weightUnitPreference,
+        ]);
 
         $this->dispatch('settings-saved');
     }

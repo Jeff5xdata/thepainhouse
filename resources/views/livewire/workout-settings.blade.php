@@ -134,6 +134,29 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Weight Unit Preferences -->
+                        <div>
+                            <h3 class="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Weight Unit Preferences</h3>
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-4">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Preferred Weight Unit
+                                </label>
+                                <div class="mt-1">
+                                    <select wire:model.live="weightUnitPreference" 
+                                        class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                        <option value="kg">Kilograms (kg)</option>
+                                        <option value="lbs">Pounds (lbs)</option>
+                                    </select>
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                    This will be used as the default unit for weight tracking and workout sessions
+                                </p>
+                                @error('weightUnitPreference')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Save Button -->

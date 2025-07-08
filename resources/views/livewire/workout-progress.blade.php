@@ -32,14 +32,14 @@
                     <div class="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-6">
                         <h3 class="text-lg font-medium text-indigo-900 dark:text-indigo-100 mb-2">Max Weight</h3>
                         <p class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                            {{ number_format(max(array_column($progressData, 'max_weight')) * 2.20462, 1) }} lb
+                            {{ number_format(max(array_column($progressData, 'max_weight')) * 2.20462, 1) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}
                         </p>
                     </div>
 
                     <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-6">
                         <h3 class="text-lg font-medium text-green-900 dark:text-green-100 mb-2">Total Volume</h3>
                         <p class="text-3xl font-bold text-green-600 dark:text-green-400">
-                            {{ array_sum(array_column($progressData, 'total_volume')) }} kg
+                            {{ array_sum(array_column($progressData, 'total_volume')) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}
                         </p>
                     </div>
 
@@ -62,10 +62,10 @@
                                         Date
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Max Weight (lb)
+                                        Max Weight ({{ strtoupper(auth()->user()->getPreferredWeightUnit()) }})
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                        Total Volume (kg)
+                                        Total Volume ({{ strtoupper(auth()->user()->getPreferredWeightUnit()) }})
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                         Total Reps

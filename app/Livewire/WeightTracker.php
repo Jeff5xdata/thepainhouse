@@ -40,6 +40,7 @@ class WeightTracker extends Component
     public function mount()
     {
         $this->measurement_date = now()->format('Y-m-d');
+        $this->unit = auth()->user()->getPreferredWeightUnit();
     }
 
     public function render()
@@ -132,7 +133,7 @@ class WeightTracker extends Component
     {
         $this->editingId = null;
         $this->weight = '';
-        $this->unit = 'kg';
+        $this->unit = auth()->user()->getPreferredWeightUnit();
         $this->measurement_date = now()->format('Y-m-d');
         $this->notes = '';
     }
@@ -167,18 +168,38 @@ class WeightTracker extends Component
             ];
         }
 
-        $currentWeight = $measurements->last()->weight_in_kg;
-        $startingWeight = $measurements->first()->weight_in_kg;
-        $weightChange = $currentWeight - $startingWeight;
-        $averageWeight = $measurements->avg(function ($m) {
+        $userPreferredUnit = auth()->user()->getPreferredWeightUnit();
+        
+        // Get weights in kg for calculations
+        $currentWeightKg = $measurements->last()->weight_in_kg;
+        $startingWeightKg = $measurements->first()->weight_in_kg;
+        $weightChangeKg = $currentWeightKg - $startingWeightKg;
+        $averageWeightKg = $measurements->avg(function ($m) {
             return $m->weight_in_kg;
         });
-        $minWeight = $measurements->min(function ($m) {
+        $minWeightKg = $measurements->min(function ($m) {
             return $m->weight_in_kg;
         });
-        $maxWeight = $measurements->max(function ($m) {
+        $maxWeightKg = $measurements->max(function ($m) {
             return $m->weight_in_kg;
         });
+
+        // Convert to user's preferred unit
+        if ($userPreferredUnit === 'lbs') {
+            $currentWeight = $currentWeightKg * 2.20462;
+            $startingWeight = $startingWeightKg * 2.20462;
+            $weightChange = $weightChangeKg * 2.20462;
+            $averageWeight = $averageWeightKg * 2.20462;
+            $minWeight = $minWeightKg * 2.20462;
+            $maxWeight = $maxWeightKg * 2.20462;
+        } else {
+            $currentWeight = $currentWeightKg;
+            $startingWeight = $startingWeightKg;
+            $weightChange = $weightChangeKg;
+            $averageWeight = $averageWeightKg;
+            $minWeight = $minWeightKg;
+            $maxWeight = $maxWeightKg;
+        }
 
         return [
             'total_measurements' => $measurements->count(),

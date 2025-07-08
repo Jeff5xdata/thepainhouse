@@ -42,7 +42,7 @@
 
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 hover:shadow-md transition-all duration-200 border border-gray-100 dark:border-gray-700">
                 <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Volume</div>
-                <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($totalVolume) }} lb</div>
+                <div class="mt-2 text-3xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($totalVolume) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}</div>
             </div>
         </div>
 
@@ -65,10 +65,10 @@
                                                 {{ $group['total_reps'] }} total reps
                                             @endif
                                             @if($group['max_weight'])
-                                                • Max weight: {{ $group['max_weight'] }} lb
+                                                • Max weight: {{ $group['max_weight'] }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}
                                             @endif
                                             @if($group['total_volume'] > 0)
-                                                • Volume: {{ number_format($group['total_volume']) }} lb
+                                                • Volume: {{ number_format($group['total_volume']) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}
                                             @endif
                                         </p>
                                     </div>

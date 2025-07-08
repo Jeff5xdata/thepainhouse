@@ -61,13 +61,13 @@ class WorkoutPlanner extends Component
     ];
 
     public $daysOfWeek = [
+        0 => 'Sunday',
         1 => 'Monday',
         2 => 'Tuesday',
         3 => 'Wednesday',
         4 => 'Thursday',
         5 => 'Friday',
-        6 => 'Saturday',
-        7 => 'Sunday'
+        6 => 'Saturday'
     ];
 
     protected $rules = [
@@ -152,7 +152,7 @@ class WorkoutPlanner extends Component
 
         // Initialize with passed week and day or defaults
         $this->currentWeek = $week ?? $this->getDefaultWeek();
-        $this->currentDay = $day ?? Carbon::now()->dayOfWeek; // 1 (Monday) through 7 (Sunday)
+        $this->currentDay = $day ?? Carbon::now()->dayOfWeek; // 0 (Sunday) through 6 (Saturday)
     }
 
     /**

@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('workout_plan_schedule', function (Blueprint $table) {
-            //
+        Schema::table('users', function (Blueprint $table) {
+            $table->enum('weight_unit_preference', ['kg', 'lbs'])->default('kg')->after('my_trainer');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('workout_plan_schedule', function (Blueprint $table) {
-            //
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('weight_unit_preference');
         });
     }
 };

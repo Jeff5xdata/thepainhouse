@@ -55,7 +55,7 @@
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Current Weight</p>
                         <p class="text-2xl font-semibold text-gray-900 dark:text-white">
                             @if($weightStats['current_weight'])
-                                {{ number_format($weightStats['current_weight'], 1) }} kg
+                                {{ number_format($weightStats['current_weight'], 1) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}
                             @else
                                 -
                             @endif
@@ -76,11 +76,11 @@
                         <p class="text-2xl font-semibold text-gray-900 dark:text-white">
                             @if($weightStats['total_change'] !== null)
                                 @if($weightStats['total_change'] > 0)
-                                    <span class="text-red-600">+{{ number_format($weightStats['total_change'], 1) }} kg</span>
+                                    <span class="text-red-600">+{{ number_format($weightStats['total_change'], 1) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}</span>
                                 @elseif($weightStats['total_change'] < 0)
-                                    <span class="text-green-600">{{ number_format($weightStats['total_change'], 1) }} kg</span>
+                                    <span class="text-green-600">{{ number_format($weightStats['total_change'], 1) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}</span>
                                 @else
-                                    <span class="text-gray-600">0.0 kg</span>
+                                    <span class="text-gray-600">0.0 {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}</span>
                                 @endif
                             @else
                                 -
@@ -101,7 +101,7 @@
                         <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Average Weight</p>
                         <p class="text-2xl font-semibold text-gray-900 dark:text-white">
                             @if($weightStats['average_weight'])
-                                {{ number_format($weightStats['average_weight'], 1) }} kg
+                                {{ number_format($weightStats['average_weight'], 1) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}
                             @else
                                 -
                             @endif
@@ -230,9 +230,16 @@
                                         {{ $measurement->date->format('M j, Y') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                        {{ number_format($measurement->weight_in_kg, 1) }} kg
-                                        @if($measurement->unit === 'lbs')
-                                            <span class="text-gray-500 dark:text-gray-400">({{ number_format($measurement->weight_in_kg * 2.20462, 1) }} lbs)</span>
+                                        @if(auth()->user()->getPreferredWeightUnit() === 'lbs')
+                                            {{ number_format($measurement->weight_in_kg * 2.20462, 1) }} lbs
+                                            @if($measurement->unit === 'kg')
+                                                <span class="text-gray-500 dark:text-gray-400">({{ number_format($measurement->weight_in_kg, 1) }} kg)</span>
+                                            @endif
+                                        @else
+                                            {{ number_format($measurement->weight_in_kg, 1) }} kg
+                                            @if($measurement->unit === 'lbs')
+                                                <span class="text-gray-500 dark:text-gray-400">({{ number_format($measurement->weight_in_kg * 2.20462, 1) }} lbs)</span>
+                                            @endif
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">

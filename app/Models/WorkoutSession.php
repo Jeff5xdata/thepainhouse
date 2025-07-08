@@ -41,7 +41,7 @@ class WorkoutSession extends Model
             'week_number' => 'required|integer|min:1',
             'day_of_week' => [
                 'required',
-                Rule::in([1, 2, 3, 4, 5, 6, 7])
+                Rule::in([0, 1, 2, 3, 4, 5, 6])
             ],
             'status' => [
                 'required',
@@ -70,13 +70,13 @@ class WorkoutSession extends Model
     public function getDayNameAttribute()
     {
         $days = [
+            0 => 'Sunday',
             1 => 'Monday',
             2 => 'Tuesday',
             3 => 'Wednesday',
             4 => 'Thursday',
             5 => 'Friday',
-            6 => 'Saturday',
-            7 => 'Sunday'
+            6 => 'Saturday'
         ];
 
         return $days[$this->day_of_week] ?? 'Unknown Day';

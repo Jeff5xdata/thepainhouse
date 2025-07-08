@@ -36,6 +36,7 @@ class User extends Authenticatable
         'owner',        // Boolean flag indicating if user is an application owner
         'is_trainer',   // Boolean flag indicating if user is a trainer
         'my_trainer',   // Foreign key to the user's trainer (if they have one)
+        'weight_unit_preference', // User's preferred weight unit (kg or lbs)
     ];
 
     /**
@@ -230,5 +231,14 @@ class User extends Authenticatable
     public function hasTrainer(): bool
     {
         return !is_null($this->my_trainer);
+    }
+
+    /**
+     * Get the user's preferred weight unit
+     * @return string
+     */
+    public function getPreferredWeightUnit(): string
+    {
+        return $this->weight_unit_preference ?? 'kg';
     }
 }

@@ -79,8 +79,8 @@ class BodyMeasurement extends Model
         
         // Get the latest weight measurement for this user
         $latestWeight = $this->user->weightMeasurements()
-            ->where('date', '<=', $this->measurement_date)
-            ->latest('date')
+            ->where('measurement_date', '<=', $this->measurement_date)
+            ->latest('measurement_date')
             ->first();
             
         if (!$latestWeight) {

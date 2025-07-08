@@ -39,7 +39,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Current Weight</dt>
                                 <dd class="text-lg font-medium text-gray-900 dark:text-white">
                                     @if($stats['current_weight'])
-                                        {{ number_format($stats['current_weight'], 1) }} kg
+                                        {{ number_format($stats['current_weight'], 1) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}
                                     @else
                                         No data
                                     @endif
@@ -63,7 +63,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Weight Change</dt>
                                 <dd class="text-lg font-medium {{ $stats['weight_change'] && $stats['weight_change'] < 0 ? 'text-green-600' : 'text-red-600' }}">
                                     @if($stats['weight_change'] !== null)
-                                        {{ $stats['weight_change'] > 0 ? '+' : '' }}{{ number_format($stats['weight_change'], 1) }} kg
+                                        {{ $stats['weight_change'] > 0 ? '+' : '' }}{{ number_format($stats['weight_change'], 1) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}
                                     @else
                                         No data
                                     @endif
@@ -87,7 +87,7 @@
                                 <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Average Weight</dt>
                                 <dd class="text-lg font-medium text-gray-900 dark:text-white">
                                     @if($stats['average_weight'])
-                                        {{ number_format($stats['average_weight'], 1) }} kg
+                                        {{ number_format($stats['average_weight'], 1) }} {{ strtoupper(auth()->user()->getPreferredWeightUnit()) }}
                                     @else
                                         No data
                                     @endif

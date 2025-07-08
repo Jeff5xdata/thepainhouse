@@ -76,7 +76,7 @@ class WorkoutSession extends Component
                 $this->isNewSession = false;
                 $this->workoutPlan = $workoutSession->workoutPlan;
                 $this->currentWeek = $workoutSession->week_number;
-                $this->currentDay = Carbon::now()->dayOfWeek; // 1 (Monday) through 7 (Sunday)
+                $this->currentDay = Carbon::now()->dayOfWeek; // 0 (Sunday) through 6 (Saturday)
                 $this->sessionDate = $workoutSession->date->format('Y-m-d');
                 $this->todayExercises = $this->workoutPlan->getScheduleForDay($workoutSession->week_number, $workoutSession->day_of_week)
                     ->unique('exercise_id')
@@ -99,7 +99,7 @@ class WorkoutSession extends Component
                     $this->isNewSession = false;
                     $this->workoutPlan = $existingSession->workoutPlan;
                     $this->currentWeek = $existingSession->week_number;
-                    $this->currentDay = Carbon::now()->dayOfWeek; // 1 (Monday) through 7 (Sunday)
+                    $this->currentDay = Carbon::now()->dayOfWeek; // 0 (Sunday) through 6 (Saturday)
                     $this->sessionDate = $existingSession->date->format('Y-m-d');
                     $this->todayExercises = $this->workoutPlan->getScheduleForDay($existingSession->week_number, $existingSession->day_of_week)
                         ->unique('exercise_id')
@@ -144,7 +144,7 @@ class WorkoutSession extends Component
                 $this->currentWeek = Carbon::now()->isoWeek();
 
                 // Set current day before any getScheduleForDay call
-                $this->currentDay = Carbon::now()->dayOfWeek; // 1 (Monday) through 7 (Sunday)
+                $this->currentDay = Carbon::now()->dayOfWeek; // 0 (Sunday) through 6 (Saturday)
 
                 // Find the first week with exercises for the current day
                 $this->todayExercises = $this->workoutPlan->getScheduleForDay($this->currentWeek, $this->currentDay)
@@ -820,7 +820,7 @@ class WorkoutSession extends Component
      */
     public function getDayName($dayNumber)
     {
-        $dayNames = [
+        $days = [
             1 => 'Monday',
             2 => 'Tuesday',
             3 => 'Wednesday',
@@ -830,7 +830,16 @@ class WorkoutSession extends Component
             7 => 'Sunday'
         ];
 
-        return $dayNames[$dayNumber] ?? 'Unknown Day';
+        return $days[$dayNumber] ?? 'Unknown Day';
+    }
+
+    /**
+     * Get the user's preferred weight unit
+     * @return string
+     */
+    public function getPreferredWeightUnit(): string
+    {
+        return auth()->user()->getPreferredWeightUnit();
     }
 
     /**

@@ -36,6 +36,7 @@ class TrainerWeightTracker extends Component
     {
         $this->clientId = $clientId;
         $this->date = now()->format('Y-m-d');
+        $this->unit = auth()->user()->getPreferredWeightUnit();
         
         // Check if user is a trainer
         if (!auth()->user()->isTrainer()) {
@@ -83,7 +84,7 @@ class TrainerWeightTracker extends Component
     {
         $this->editingId = null;
         $this->weight = '';
-        $this->unit = 'kg';
+        $this->unit = auth()->user()->getPreferredWeightUnit();
         $this->date = now()->format('Y-m-d');
         $this->notes = '';
         $this->showForm = false;
@@ -159,12 +160,32 @@ class TrainerWeightTracker extends Component
             ];
         }
 
-        $currentWeight = $measurements->last()->weight_in_kg;
-        $startingWeight = $measurements->first()->weight_in_kg;
-        $totalChange = $currentWeight - $startingWeight;
-        $averageWeight = $measurements->avg('weight_in_kg');
-        $minWeight = $measurements->min('weight_in_kg');
-        $maxWeight = $measurements->max('weight_in_kg');
+        $userPreferredUnit = auth()->user()->getPreferredWeightUnit();
+        
+        // Get weights in kg for calculations
+        $currentWeightKg = $measurements->last()->weight_in_kg;
+        $startingWeightKg = $measurements->first()->weight_in_kg;
+        $totalChangeKg = $currentWeightKg - $startingWeightKg;
+        $averageWeightKg = $measurements->avg('weight_in_kg');
+        $minWeightKg = $measurements->min('weight_in_kg');
+        $maxWeightKg = $measurements->max('weight_in_kg');
+
+        // Convert to user's preferred unit
+        if ($userPreferredUnit === 'lbs') {
+            $currentWeight = $currentWeightKg * 2.20462;
+            $startingWeight = $startingWeightKg * 2.20462;
+            $totalChange = $totalChangeKg * 2.20462;
+            $averageWeight = $averageWeightKg * 2.20462;
+            $minWeight = $minWeightKg * 2.20462;
+            $maxWeight = $maxWeightKg * 2.20462;
+        } else {
+            $currentWeight = $currentWeightKg;
+            $startingWeight = $startingWeightKg;
+            $totalChange = $totalChangeKg;
+            $averageWeight = $averageWeightKg;
+            $minWeight = $minWeightKg;
+            $maxWeight = $maxWeightKg;
+        }
 
         return [
             'total_measurements' => $measurements->count(),
