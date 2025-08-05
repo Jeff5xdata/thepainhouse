@@ -164,7 +164,7 @@
             </div>
             
             <div class="h-96">
-                <canvas id="progressChart" wire:ignore></canvas>
+                <div id="progressChart" wire:ignore></div>
             </div>
         </div>
 
@@ -246,55 +246,141 @@
 </div>
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
 <script>
 document.addEventListener('livewire:init', () => {
     let chart = null;
     
     function initChart() {
-        const ctx = document.getElementById('progressChart');
-        if (!ctx) return;
-        
-        const chartData = @json($chartData);
-        const selectedChart = @json($selectedChart);
+        const chartContainer = document.getElementById('progressChart');
+        if (!chartContainer) {
+            console.error('Chart container not found');
+            return;
+        }
         
         if (chart) {
             chart.destroy();
         }
         
+        // Clear the container
+        chartContainer.innerHTML = '';
+        
+        const chartData = @json($chartData);
+        const selectedChart = @json($selectedChart);
+        
+        console.log('Chart data:', chartData);
+        console.log('Selected chart:', selectedChart);
+        
         const data = chartData[selectedChart] || chartData.weight;
         
-        chart = new Chart(ctx, {
-            type: 'line',
-            data: data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    title: {
-                        display: false,
-                    },
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                    },
-                },
-            },
+        // Check if we have valid data
+        if (!data || !data.labels || data.labels.length === 0) {
+            console.log('No chart data available');
+            chartContainer.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">No data available</div>';
+            return;
+        }
+        
+        // Prepare data for ApexCharts
+        const series = [];
+        data.datasets.forEach(dataset => {
+            series.push({
+                name: dataset.label,
+                data: dataset.data,
+                color: dataset.borderColor
+            });
         });
+        
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        
+        const options = {
+            chart: {
+                type: 'line',
+                height: 350,
+                toolbar: {
+                    show: false
+                },
+                background: 'transparent'
+            },
+            series: series,
+            xaxis: {
+                categories: data.labels,
+                labels: {
+                    style: {
+                        colors: isDarkMode ? '#d1d5db' : '#374151'
+                    }
+                },
+                axisBorder: {
+                    color: isDarkMode ? '#374151' : '#e5e7eb'
+                },
+                axisTicks: {
+                    color: isDarkMode ? '#374151' : '#e5e7eb'
+                }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        colors: isDarkMode ? '#d1d5db' : '#374151'
+                    }
+                }
+            },
+            grid: {
+                borderColor: isDarkMode ? '#374151' : '#e5e7eb',
+                strokeDashArray: 4
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 2
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.7,
+                    opacityTo: 0.1,
+                    stops: [0, 90, 100]
+                }
+            },
+            legend: {
+                position: 'top',
+                labels: {
+                    colors: isDarkMode ? '#d1d5db' : '#374151'
+                }
+            },
+            tooltip: {
+                theme: isDarkMode ? 'dark' : 'light'
+            },
+            responsive: [{
+                breakpoint: 768,
+                options: {
+                    chart: {
+                        height: 250
+                    }
+                }
+            }]
+        };
+        
+        try {
+            chart = new ApexCharts(chartContainer, options);
+            chart.render();
+            console.log('Chart initialized successfully');
+        } catch (error) {
+            console.error('Error initializing chart:', error);
+            chartContainer.innerHTML = '<div class="flex items-center justify-center h-full text-red-500">Error loading chart</div>';
+        }
     }
     
     // Initialize chart on page load
-    initChart();
+    setTimeout(() => {
+        console.log('Initializing chart...');
+        initChart();
+    }, 200);
     
     // Update chart when Livewire updates
     Livewire.on('updateCharts', () => {
+        console.log('Livewire updateCharts event received');
         setTimeout(() => {
             initChart();
-        }, 100);
+        }, 200);
     });
 });
 </script>

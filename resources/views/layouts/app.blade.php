@@ -221,7 +221,6 @@
                                     </a>
 
                                     <!-- Trainer Request Link (for clients) -->
-                                    @if(!auth()->user()->isTrainer() && !auth()->user()->hasTrainer())
                                         <a href="{{ route('trainer.request') }}" 
                                             class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
                                             @click="menuOpen = false"
@@ -231,7 +230,6 @@
                                             </svg>
                                             {{ __('Request Trainer') }}
                                         </a>
-                                    @endif
 
                                     <!-- Messaging Center Link -->
                                     <a href="{{ route('messaging.center') }}" 

@@ -198,125 +198,52 @@
                 </span>
             </a>
         </div>
-    
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
     <script>
         console.log('ApexCharts script loaded!');
         
         let chart = null;
-        let observer = null;
-        let isInitializing = false;
         
         // Function to get chart data from Livewire component
         function getChartDataFromLivewire() {
-            console.log('Getting chart data from Livewire...');
-            
-            // Force refresh the debug info element
+            // Try to get data from debug info first
             const debugInfo = document.querySelector('.mb-4.p-4.bg-gray-100');
             if (debugInfo) {
-                console.log('Found debug info element');
-                console.log('Debug info text content:', debugInfo.textContent);
-                
                 const chartDataText = debugInfo.textContent.match(/Chart Data: (.+)/);
                 if (chartDataText) {
                     try {
-                        const chartData = JSON.parse(chartDataText[1]);
-                        console.log('Parsed chart data from debug info:', chartData);
-                        console.log('Chart data labels:', chartData.labels);
-                        console.log('Chart data datasets:', chartData.datasets);
-                        
-                        // Validate the data
-                        if (chartData.labels && chartData.datasets && chartData.datasets.length > 0) {
-                            console.log('Chart data is valid');
-                            return chartData;
-                        } else {
-                            console.log('Chart data is invalid - missing labels or datasets');
-                        }
+                        return JSON.parse(chartDataText[1]);
                     } catch (e) {
                         console.error('Error parsing chart data:', e);
-                        console.error('Raw chart data text:', chartDataText[1]);
                     }
-                } else {
-                    console.log('No chart data found in debug info text');
-                    console.log('Available text in debug info:', debugInfo.textContent);
                 }
-            } else {
-                console.log('Debug info element not found');
             }
             
             // Fallback: try to get from Livewire component data
             if (window.Livewire) {
                 const component = window.Livewire.find(document.querySelector('[wire\\:id]'));
                 if (component) {
-                    const chartData = component.get('chartData');
-                    console.log('Got chart data from Livewire component:', chartData);
-                    return chartData;
-                } else {
-                    console.log('Livewire component not found');
+                    return component.get('chartData');
                 }
-            } else {
-                console.log('Livewire not available');
             }
             
-            console.log('No chart data found');
             return null;
         }
         
-        // Function to force refresh debug info
-        function refreshDebugInfo() {
-            // Force a small delay to ensure Livewire has updated the DOM
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    const debugInfo = document.querySelector('.mb-4.p-4.bg-gray-100');
-                    if (debugInfo) {
-                        console.log('Debug info refreshed:', debugInfo.textContent);
-                    }
-                    resolve();
-                }, 200);
-            });
-        }
-        
         // Chart initialization function
-        async function initializeProgressChart() {
-            if (isInitializing) {
-                console.log('Chart initialization already in progress, skipping...');
-                return;
-            }
-            
-            console.log('=== INITIALIZING PROGRESS CHART ===');
-            isInitializing = true;
-            
-            // Force refresh debug info before proceeding
-            await refreshDebugInfo();
+        function initializeProgressChart() {
+            console.log('Initializing progress chart...');
             
             const chartContainer = document.getElementById('progressChart');
             if (!chartContainer) {
                 console.error('Chart container not found');
-                isInitializing = false;
                 return;
             }
             
-            // Temporarily disconnect observer to prevent loops
-            if (observer) {
-                observer.disconnect();
-                console.log('Observer disconnected during initialization');
-            }
-            
-            // Force destroy existing chart if it exists
-            if (chart) {
-                console.log('Force destroying existing chart...');
-                try {
-                    chart.destroy();
-                } catch (e) {
-                    console.log('Error destroying chart:', e);
-                }
-                chart = null;
-            }
-            
-            // Clear container completely and wait a bit
+            // Clear container
             chartContainer.innerHTML = '';
-            console.log('Container cleared');
             
             // Get chart data from Livewire
             const chartData = getChartDataFromLivewire();
@@ -328,47 +255,13 @@
             }
             
             console.log('Using chart data:', chartData);
-            console.log('Labels:', chartData.labels);
-            console.log('Labels length:', chartData.labels.length);
-            console.log('Datasets:', chartData.datasets);
-            console.log('Datasets length:', chartData.datasets.length);
-            
-            // Log each dataset in detail
-            chartData.datasets.forEach((dataset, index) => {
-                console.log(`Dataset ${index} (${dataset.label}):`, {
-                    label: dataset.label,
-                    data: dataset.data,
-                    dataLength: dataset.data.length,
-                    borderColor: dataset.borderColor,
-                    backgroundColor: dataset.backgroundColor,
-                    borderDash: dataset.borderDash,
-                    fill: dataset.fill
-                });
-            });
             
             // Prepare series for ApexCharts
-            const series = chartData.datasets.map(dataset => {
-                const seriesData = {
-                    name: dataset.label,
-                    data: dataset.data.map((value, index) => ({
-                        x: chartData.labels[index],
-                        y: value
-                    }))
-                };
-                
-                // Add styling based on dataset properties
-                if (dataset.borderDash) {
-                    seriesData.dashArray = dataset.borderDash;
-                }
-                if (dataset.fill !== undefined) {
-                    seriesData.fill = dataset.fill;
-                }
-                
-                console.log(`Series ${dataset.label}:`, seriesData);
-                return seriesData;
-            });
-            
-            console.log('Prepared series for ApexCharts:', series);
+            const series = chartData.datasets.map(dataset => ({
+                name: dataset.label,
+                data: dataset.data,
+                color: dataset.borderColor
+            }));
             
             const isDarkMode = document.documentElement.classList.contains('dark');
             
@@ -381,7 +274,7 @@
                 },
                 series: series,
                 xaxis: {
-                    type: 'category',
+                    categories: chartData.labels,
                     labels: {
                         style: {
                             colors: isDarkMode ? '#d1d5db' : '#374151',
@@ -390,7 +283,8 @@
                         }
                     },
                     axisBorder: {
-                        color: isDarkMode ? '#6b7280' : '#d1d5db'
+                        color: isDarkMode ? '#6b7280' : '#d1d5db',
+                        width: 2
                     },
                     axisTicks: {
                         color: isDarkMode ? '#6b7280' : '#d1d5db'
@@ -405,7 +299,8 @@
                         }
                     },
                     axisBorder: {
-                        color: isDarkMode ? '#6b7280' : '#d1d5db'
+                        color: isDarkMode ? '#6b7280' : '#d1d5db',
+                        width: 2
                     }
                 },
                 grid: {
@@ -413,18 +308,21 @@
                     strokeDashArray: 4,
                     xaxis: {
                         lines: {
-                            show: true
+                            show: true,
+                            color: isDarkMode ? '#4b5563' : '#e5e7eb'
                         }
                     },
                     yaxis: {
                         lines: {
-                            show: true
+                            show: true,
+                            color: isDarkMode ? '#4b5563' : '#e5e7eb'
                         }
                     }
                 },
                 stroke: {
                     curve: 'smooth',
-                    width: 4
+                    width: 4,
+                    colors: series.map(s => s.color)
                 },
                 fill: {
                     type: 'gradient',
@@ -451,27 +349,25 @@
                 },
                 markers: {
                     size: 6,
-                    strokeWidth: 2
+                    strokeWidth: 2,
+                    strokeColors: series.map(s => s.color),
+                    fillColors: series.map(s => s.color)
                 }
             };
             
             try {
+                // Destroy existing chart if it exists
+                if (chart) {
+                    chart.destroy();
+                }
+                
                 console.log('Creating ApexCharts instance...');
-                console.log('Chart options:', options);
                 chart = new ApexCharts(chartContainer, options);
                 chart.render();
                 console.log('Chart rendered successfully!');
             } catch (error) {
                 console.error('Error creating chart:', error);
                 chartContainer.innerHTML = '<div class="flex items-center justify-center h-full text-red-500">Error: ' + error.message + '</div>';
-            } finally {
-                // Re-enable observer and reset initialization flag
-                if (observer) {
-                    observer.observe(chartContainer, { childList: true, subtree: true });
-                    console.log('Observer reconnected after initialization');
-                }
-                isInitializing = false;
-                console.log('Chart initialization completed');
             }
         }
         
@@ -484,74 +380,19 @@
         
         // Update chart when Livewire updates
         document.addEventListener('livewire:updated', () => {
-            console.log('=== LIVEWIRE UPDATED EVENT ===');
-            setTimeout(() => {
-                console.log('Reinitializing chart after Livewire update...');
-                initializeProgressChart();
-            }, 300);
+            console.log('Livewire updated, reinitializing chart...');
+            setTimeout(initializeProgressChart, 100);
         });
         
         // Listen for specific updateCharts event
         if (window.Livewire) {
             Livewire.on('updateCharts', () => {
-                console.log('=== UPDATE CHARTS EVENT ===');
-                setTimeout(() => {
-                    console.log('Reinitializing chart after updateCharts event...');
-                    initializeProgressChart();
-                }, 300);
+                console.log('updateCharts event received, reinitializing chart...');
+                setTimeout(initializeProgressChart, 100);
             });
-        }
-        
-        // Listen for all Livewire events for debugging
-        document.addEventListener('livewire:load', () => {
-            console.log('=== LIVEWIRE LOAD EVENT ===');
-            setTimeout(() => {
-                console.log('Initializing chart after Livewire load...');
-                initializeProgressChart();
-            }, 500);
-        });
-        
-        // Additional event listeners for debugging
-        document.addEventListener('livewire:navigated', () => {
-            console.log('=== LIVEWIRE NAVIGATED EVENT ===');
-        });
-        
-        document.addEventListener('livewire:init', () => {
-            console.log('=== LIVEWIRE INIT EVENT ===');
-        });
-        
-        // Listen for any DOM changes that might indicate Livewire updates
-        observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'childList' && mutation.target.id === 'progressChart') {
-                    console.log('=== DOM MUTATION DETECTED ===');
-                    setTimeout(() => {
-                        console.log('Reinitializing chart after DOM mutation...');
-                        initializeProgressChart();
-                    }, 100);
-                }
-            });
-        });
-        
-        // Start observing the chart container
-        const chartContainer = document.getElementById('progressChart');
-        if (chartContainer) {
-            observer.observe(chartContainer, { childList: true, subtree: true });
-            console.log('Started observing chart container for DOM changes');
         }
         
         // Also try after a delay to ensure everything is loaded
         setTimeout(initializeProgressChart, 1000);
-        
-        // Manual trigger for time range changes
-        document.addEventListener('change', (event) => {
-            if (event.target.id === 'timeRange' || event.target.id === 'selectedChart') {
-                console.log(`=== ${event.target.id.toUpperCase()} CHANGED MANUALLY ===`);
-                setTimeout(() => {
-                    console.log('Reinitializing chart after manual change...');
-                    initializeProgressChart();
-                }, 1000); // Increased delay to ensure debug info is updated
-            }
-        });
     </script>
 </div>

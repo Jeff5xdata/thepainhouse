@@ -22,11 +22,13 @@ class ProgressCharts extends Component
     public function updatedTimeRange()
     {
         $this->loadChartData();
+        $this->dispatch('updateCharts');
     }
 
     public function updatedSelectedChart()
     {
         $this->loadChartData();
+        $this->dispatch('updateCharts');
     }
 
     public function render()
@@ -38,6 +40,13 @@ class ProgressCharts extends Component
     {
         $startDate = Carbon::now()->subDays($this->timeRange);
         
+        \Log::info('Loading chart data', [
+            'selectedChart' => $this->selectedChart,
+            'timeRange' => $this->timeRange,
+            'startDate' => $startDate,
+            'user_id' => Auth::id()
+        ]);
+        
         if ($this->selectedChart === 'weight') {
             $this->chartData = $this->getWeightChartData($startDate);
         } elseif ($this->selectedChart === 'body_measurements') {
@@ -47,6 +56,29 @@ class ProgressCharts extends Component
         } elseif ($this->selectedChart === 'bmi') {
             $this->chartData = $this->getBmiChartData($startDate);
         }
+        
+        \Log::info('Chart data loaded', [
+            'chartData' => $this->chartData,
+            'hasLabels' => !empty($this->chartData['labels']),
+            'labelCount' => count($this->chartData['labels'] ?? [])
+        ]);
+        
+        // Ensure chartData is not empty
+        if (empty($this->chartData['labels'])) {
+            $this->chartData = [
+                'labels' => [],
+                'datasets' => [
+                    [
+                        'label' => 'No Data Available',
+                        'data' => [],
+                        'borderColor' => 'rgb(156, 163, 175)',
+                        'backgroundColor' => 'rgba(156, 163, 175, 0.1)',
+                        'tension' => 0.1,
+                        'fill' => true,
+                    ]
+                ]
+            ];
+        }
     }
 
     private function getWeightChartData($startDate)
@@ -55,6 +87,13 @@ class ProgressCharts extends Component
             ->where('measurement_date', '>=', $startDate)
             ->orderBy('measurement_date', 'asc')
             ->get();
+
+        \Log::info('Weight measurements query', [
+            'user_id' => Auth::id(),
+            'startDate' => $startDate,
+            'measurementCount' => $measurements->count(),
+            'measurements' => $measurements->toArray()
+        ]);
 
         $labels = [];
         $weights = [];
@@ -70,7 +109,7 @@ class ProgressCharts extends Component
             $trendline = $this->calculateTrendline($weights);
         }
 
-        return [
+        $chartData = [
             'labels' => $labels,
             'datasets' => [
                 [
@@ -92,6 +131,15 @@ class ProgressCharts extends Component
                 ]
             ]
         ];
+
+        \Log::info('Weight chart data generated', [
+            'labels' => $labels,
+            'weights' => $weights,
+            'trendline' => $trendline,
+            'chartData' => $chartData
+        ]);
+
+        return $chartData;
     }
 
     private function getBodyMeasurementsChartData($startDate)
@@ -110,11 +158,11 @@ class ProgressCharts extends Component
 
         foreach ($measurements as $measurement) {
             $labels[] = $measurement->measurement_date->format('M j');
-            $chest[] = $measurement->chest;
-            $waist[] = $measurement->waist;
-            $hips[] = $measurement->hips;
-            $biceps[] = $measurement->biceps;
-            $thighs[] = $measurement->thighs;
+            $chest[] = $measurement->chest ?? null;
+            $waist[] = $measurement->waist ?? null;
+            $hips[] = $measurement->hips ?? null;
+            $biceps[] = $measurement->biceps ?? null;
+            $thighs[] = $measurement->thighs ?? null;
         }
 
         return [
@@ -174,7 +222,7 @@ class ProgressCharts extends Component
         foreach ($measurements as $measurement) {
             $labels[] = $measurement->measurement_date->format('M j');
             $bodyFat[] = $measurement->body_fat_percentage;
-            $muscleMass[] = $measurement->muscle_mass;
+            $muscleMass[] = $measurement->muscle_mass ?? null;
         }
 
         return [
@@ -207,7 +255,6 @@ class ProgressCharts extends Component
         $measurements = BodyMeasurement::where('user_id', Auth::id())
             ->where('measurement_date', '>=', $startDate)
             ->whereNotNull('height')
-            ->whereNotNull('muscle_mass')
             ->orderBy('measurement_date', 'asc')
             ->get();
 
@@ -215,8 +262,11 @@ class ProgressCharts extends Component
         $bmi = [];
 
         foreach ($measurements as $measurement) {
-            $labels[] = $measurement->measurement_date->format('M j');
-            $bmi[] = round($measurement->bmi, 1);
+            $bmiValue = $measurement->bmi;
+            if ($bmiValue !== null) {
+                $labels[] = $measurement->measurement_date->format('M j');
+                $bmi[] = round($bmiValue, 1);
+            }
         }
 
         return [

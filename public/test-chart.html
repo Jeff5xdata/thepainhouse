@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .chart-container { width: 600px; height: 400px; border: 1px solid #ccc; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Chart Test Page</h1>
+    <p>This is a simple test to verify chart functionality.</p>
+    
+    <div class="chart-container">
+        <div id="testChart"></div>
+    </div>
+    
+    <div id="status"></div>
+
+    <script>
+        console.log('Test page loaded');
+        
+        // Check if ApexCharts is loaded
+        if (typeof ApexCharts === 'undefined') {
+            console.error('ApexCharts is not loaded!');
+            document.getElementById('status').innerHTML = '<p style="color: red;">❌ ApexCharts is not loaded!</p>';
+        } else {
+            console.log('ApexCharts is loaded successfully');
+            document.getElementById('status').innerHTML = '<p style="color: green;">✅ ApexCharts is loaded!</p>';
+            
+            // Create a test chart
+            setTimeout(() => {
+                try {
+                    const options = {
+                        chart: {
+                            type: 'line',
+                            height: 350
+                        },
+                        series: [{
+                            name: 'Weight (kg)',
+                            data: [141.5, 140.6, 140.6]
+                        }, {
+                            name: 'Trend',
+                            data: [141.4, 140.9, 140.5]
+                        }],
+                        xaxis: {
+                            categories: ['Jul 4', 'Jul 18', 'Jul 21']
+                        },
+                        stroke: {
+                            curve: 'smooth',
+                            width: 2
+                        },
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.7,
+                                opacityTo: 0.1,
+                                stops: [0, 90, 100]
+                            }
+                        }
+                    };
+                    
+                    const chart = new ApexCharts(document.getElementById('testChart'), options);
+                    chart.render();
+                    
+                    console.log('Test chart created successfully!');
+                    document.getElementById('status').innerHTML += '<p style="color: green;">✅ Test chart created successfully!</p>';
+                } catch (error) {
+                    console.error('Error creating test chart:', error);
+                    document.getElementById('status').innerHTML += '<p style="color: red;">❌ Error creating chart: ' + error.message + '</p>';
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html> 

@@ -65,7 +65,7 @@ class TrainerProgressCharts extends Component
         }
         $bodyData = $bodyQuery->orderBy('measurement_date')->get();
 
-        return [
+        $chartData = [
             'weight' => [
                 'labels' => $weightData->pluck('measurement_date')->map(fn($date) => $date->format('M j')),
                 'datasets' => [
@@ -83,21 +83,21 @@ class TrainerProgressCharts extends Component
                 'datasets' => [
                     [
                         'label' => 'Chest (cm)',
-                        'data' => $bodyData->pluck('chest'),
+                        'data' => $bodyData->pluck('chest')->map(fn($value) => $value ?? null),
                         'borderColor' => 'rgb(239, 68, 68)',
                         'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
                         'tension' => 0.1,
                     ],
                     [
                         'label' => 'Waist (cm)',
-                        'data' => $bodyData->pluck('waist'),
+                        'data' => $bodyData->pluck('waist')->map(fn($value) => $value ?? null),
                         'borderColor' => 'rgb(245, 158, 11)',
                         'backgroundColor' => 'rgba(245, 158, 11, 0.1)',
                         'tension' => 0.1,
                     ],
                     [
                         'label' => 'Hips (cm)',
-                        'data' => $bodyData->pluck('hips'),
+                        'data' => $bodyData->pluck('hips')->map(fn($value) => $value ?? null),
                         'borderColor' => 'rgb(168, 85, 247)',
                         'backgroundColor' => 'rgba(168, 85, 247, 0.1)',
                         'tension' => 0.1,
@@ -109,7 +109,7 @@ class TrainerProgressCharts extends Component
                 'datasets' => [
                     [
                         'label' => 'BMI',
-                        'data' => $bodyData->pluck('bmi'),
+                        'data' => $bodyData->pluck('bmi')->map(fn($value) => $value ?? null),
                         'borderColor' => 'rgb(34, 197, 94)',
                         'backgroundColor' => 'rgba(34, 197, 94, 0.1)',
                         'tension' => 0.1,
@@ -121,14 +121,14 @@ class TrainerProgressCharts extends Component
                 'datasets' => [
                     [
                         'label' => 'Body Fat %',
-                        'data' => $bodyData->pluck('body_fat_percentage'),
+                        'data' => $bodyData->pluck('body_fat_percentage')->map(fn($value) => $value ?? null),
                         'borderColor' => 'rgb(239, 68, 68)',
                         'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
                         'tension' => 0.1,
                     ],
                     [
                         'label' => 'Muscle Mass (kg)',
-                        'data' => $bodyData->pluck('muscle_mass'),
+                        'data' => $bodyData->pluck('muscle_mass')->map(fn($value) => $value ?? null),
                         'borderColor' => 'rgb(59, 130, 246)',
                         'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                         'tension' => 0.1,
@@ -136,6 +136,27 @@ class TrainerProgressCharts extends Component
                 ]
             ]
         ];
+        
+        // Ensure each chart has data
+        foreach ($chartData as $chartType => $data) {
+            if (empty($data['labels'])) {
+                $chartData[$chartType] = [
+                    'labels' => [],
+                    'datasets' => [
+                        [
+                            'label' => 'No Data Available',
+                            'data' => [],
+                            'borderColor' => 'rgb(156, 163, 175)',
+                            'backgroundColor' => 'rgba(156, 163, 175, 0.1)',
+                            'tension' => 0.1,
+                            'fill' => true,
+                        ]
+                    ]
+                ];
+            }
+        }
+        
+        return $chartData;
     }
 
     public function getStatsProperty()

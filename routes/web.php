@@ -126,3 +126,7 @@ Route::view('/offline', 'offline')->name('offline');
 
 // Include authentication routes (login, register, password reset, etc.)
 require __DIR__.'/auth.php';
+
+Route::get('/test-chart', function () {
+    return view('test-chart');
+})->name('test.chart');
