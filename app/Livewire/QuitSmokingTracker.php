@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Services\PushNotificationService;
 
@@ -29,7 +30,7 @@ class QuitSmokingTracker extends Component
     public $daysSmokeFree = 0;
     public $nextSmokeTime;
     public $showNotification = false;
-    public $notificationService;
+    protected $notificationService;
 
     protected $paginationTheme = 'tailwind';
     
@@ -41,7 +42,6 @@ class QuitSmokingTracker extends Component
         $this->startDate = now()->format('Y-m-d');
         $this->currentDate = now()->format('Y-m-d');
         $this->targetQuitDate = now()->addMonth()->format('Y-m-d');
-        $this->notificationService = new PushNotificationService();
         $this->loadSmokingLogs();
         $this->calculateReductionPlan();
         $this->calculateNextSmokeTime();
@@ -197,7 +197,7 @@ class QuitSmokingTracker extends Component
         $this->nextSmokeTime = $nextTime->format('H:i');
         
         // Schedule push notification for next smoke time
-        if ($this->notificationService && $remainingCigarettes > 0) {
+        if ($remainingCigarettes > 0) {
             $this->scheduleSmokeNotification($nextTime, $remainingCigarettes);
         }
     }
@@ -218,11 +218,9 @@ class QuitSmokingTracker extends Component
      */
     public function scheduleSmokeNotification($nextTime, $remainingCigarettes)
     {
-        if (!$this->notificationService) {
-            return;
-        }
-        
         try {
+            $notificationService = app(PushNotificationService::class);
+            
             $title = "🚬 Time to Smoke";
             $body = "You have {$remainingCigarettes} cigarette(s) remaining today. Next scheduled time: " . $nextTime->format('H:i');
             
@@ -233,7 +231,7 @@ class QuitSmokingTracker extends Component
                 'user_id' => Auth::id()
             ];
             
-            $this->notificationService->scheduleNotification(
+            $notificationService->scheduleNotification(
                 Auth::id(),
                 $title,
                 $body,
@@ -270,8 +268,13 @@ class QuitSmokingTracker extends Component
             $this->loadSmokingLogs();
         }
         
-        // Convert to collection and sort, then manually paginate
-        $sortedLogs = collect($this->smokingLogs)->sortByDesc('timestamp');
+        // Convert to collection and sort safely, then manually paginate
+        $sortedLogs = collect($this->smokingLogs)
+            ->filter(function($log) {
+                return is_array($log) && isset($log['timestamp']);
+            })
+            ->sortByDesc('timestamp');
+            
         $perPage = 10;
         $currentPage = request()->get('page', 1);
         $offset = ($currentPage - 1) * $perPage;
