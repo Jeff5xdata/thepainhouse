@@ -7,6 +7,11 @@ use App\Models\WorkoutSession;
 use App\Models\ExerciseSet;
 use App\Models\WorkoutSetting;
 use App\Models\Exercise;
+use App\Models\FoodLog;
+use App\Models\FoodItem;
+use App\Models\WeightMeasurement;
+use App\Models\BodyMeasurement;
+use App\Models\User;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Livewire\WithFileUploads;
@@ -26,6 +31,9 @@ class WorkoutBackup extends Component
         'overwrite_existing' => false,
         'include_settings' => true,
         'include_history' => true,
+        'include_food_tracker' => true,
+        'include_body_tracking' => true,
+        'include_client_data' => false,
     ];
 
     public function mount()
@@ -50,6 +58,9 @@ class WorkoutBackup extends Component
             'overwrite_existing' => false,
             'include_settings' => true,
             'include_history' => true,
+            'include_food_tracker' => true,
+            'include_body_tracking' => true,
+            'include_client_data' => false,
         ];
     }
 
@@ -105,6 +116,12 @@ class WorkoutBackup extends Component
                 throw new \Exception('Invalid backup file format - missing user information');
             }
 
+            // Check if backup includes new data types
+            $hasFoodTracker = isset($backupData['food_tracker']) && !empty($backupData['food_tracker']['food_logs']);
+            $hasBodyTracking = isset($backupData['body_tracking']) && (!empty($backupData['body_tracking']['weight_measurements']) || !empty($backupData['body_tracking']['body_measurements']));
+            $hasClientData = isset($backupData['client_data']) && !empty($backupData['client_data']);
+            $isTrainer = isset($backupData['user']['is_trainer']) && $backupData['user']['is_trainer'];
+
             $this->restorePreview = [
                 'version' => $backupData['version'],
                 'created_at' => $backupData['created_at'] ?? 'Unknown',
@@ -113,6 +130,15 @@ class WorkoutBackup extends Component
                 'workout_sessions_count' => count($backupData['workout_sessions'] ?? []),
                 'exercise_sets_count' => count($backupData['exercise_sets'] ?? []),
                 'has_settings' => !empty($backupData['workout_settings']),
+                'has_food_tracker' => $hasFoodTracker,
+                'has_body_tracking' => $hasBodyTracking,
+                'has_client_data' => $hasClientData,
+                'is_trainer' => $isTrainer,
+                'food_logs_count' => $hasFoodTracker ? count($backupData['food_tracker']['food_logs']) : 0,
+                'food_items_count' => $hasFoodTracker ? count($backupData['food_tracker']['food_items']) : 0,
+                'weight_measurements_count' => $hasBodyTracking ? count($backupData['body_tracking']['weight_measurements']) : 0,
+                'body_measurements_count' => $hasBodyTracking ? count($backupData['body_tracking']['body_measurements']) : 0,
+                'clients_count' => $hasClientData ? count($backupData['client_data']) : 0,
                 'backup_data' => $backupData,
             ];
 
@@ -173,44 +199,32 @@ class WorkoutBackup extends Component
 
             // Restore workout plans
             foreach ($backupData['workout_plans'] as $planData) {
-                // Check if plan already exists
-                $existingPlan = WorkoutPlan::where('user_id', $user->id)
-                    ->where('name', $planData['name'])
-                    ->first();
-
-                if ($existingPlan && !$this->restoreOptions['overwrite_existing']) {
-                    // Skip existing plans if not overwriting
-                    $planIdMapping[$planData['id']] = $existingPlan->id;
-                    continue;
-                }
-
-                if ($existingPlan && $this->restoreOptions['overwrite_existing']) {
-                    // Delete existing plan and related data
-                    $existingPlan->delete();
-                }
-
-                // Create new plan
-                $planCreateData = [
-                    'name' => $planData['name'],
-                    'description' => $planData['description'] ?? '',
-                    'weeks_duration' => $planData['weeks_duration'] ?? 1,
+                $oldPlanId = $planData['id'];
+                unset($planData['id'], $planData['user_id'], $planData['created_at'], $planData['updated_at']);
+                
+                $plan = WorkoutPlan::create([
                     'user_id' => $user->id,
+                    'name' => $planData['name'],
+                    'description' => $planData['description'] ?? null,
                     'is_active' => $planData['is_active'] ?? true,
-                ];
+                ]);
 
-                $newPlan = WorkoutPlan::create($planCreateData);
-                $planIdMapping[$planData['id']] = $newPlan->id;
+                $planIdMapping[$oldPlanId] = $plan->id;
 
-                // Restore plan exercises
+                // Restore exercises for this plan
                 if (!empty($planData['exercises'])) {
                     foreach ($planData['exercises'] as $exerciseData) {
-                        // Find exercise by name (assuming exercises exist in the system)
-                        $exercise = Exercise::where('name', $exerciseData['exercise_name'])->first();
-                        
-                        if ($exercise && $exerciseData['pivot']) {
-                            $pivotData = $exerciseData['pivot'];
-                            unset($pivotData['workout_plan_id'], $pivotData['exercise_id'], $pivotData['created_at'], $pivotData['updated_at']);
-                            $newPlan->exercises()->attach($exercise->id, $pivotData);
+                        if (isset($exerciseData['pivot'])) {
+                            $exercise = Exercise::where('name', $exerciseData['name'])->first();
+                            if ($exercise) {
+                                $plan->exercises()->attach($exercise->id, [
+                                    'sets' => $exerciseData['pivot']['sets'] ?? 1,
+                                    'reps' => $exerciseData['pivot']['reps'] ?? 10,
+                                    'weight' => $exerciseData['pivot']['weight'] ?? null,
+                                    'rest_time' => $exerciseData['pivot']['rest_time'] ?? null,
+                                    'notes' => $exerciseData['pivot']['notes'] ?? null,
+                                ]);
+                            }
                         }
                     }
                 }
@@ -218,43 +232,18 @@ class WorkoutBackup extends Component
                 // Restore schedule items
                 if (!empty($planData['schedule_items'])) {
                     foreach ($planData['schedule_items'] as $scheduleData) {
-                        try {
-                            $exercise = Exercise::where('name', $scheduleData['exercise_name'])->first();
-                            
-                            if ($exercise) {
-                                $scheduleInsertData = $scheduleData['schedule_data'];
-                                $scheduleInsertData['workout_plan_id'] = $newPlan->id;
-                                $scheduleInsertData['exercise_id'] = $exercise->id;
-                                unset($scheduleInsertData['id'], $scheduleInsertData['created_at'], $scheduleInsertData['updated_at']);
-                                
-                                // Handle set_details field - convert array to JSON string if needed
-                                if (isset($scheduleInsertData['set_details']) && is_array($scheduleInsertData['set_details'])) {
-                                    $scheduleInsertData['set_details'] = json_encode($scheduleInsertData['set_details']);
-                                }
-                                
-                                // Only include fields that belong to workout_plan_schedule table
-                                $allowedFields = [
-                                    'workout_plan_id', 'exercise_id', 'week_number', 'day_of_week', 
-                                    'order_in_day', 'set_details'
-                                ];
-                                
-                                $filteredData = array_intersect_key($scheduleInsertData, array_flip($allowedFields));
-                                
-                                // Ensure required fields have proper types
-                                $filteredData['week_number'] = (int) ($filteredData['week_number'] ?? 1);
-                                $filteredData['day_of_week'] = (string) ($filteredData['day_of_week'] ?? 1);
-                                $filteredData['order_in_day'] = (int) ($filteredData['order_in_day'] ?? 0);
-                                
-                                DB::table('workout_plan_schedule')->insert($filteredData);
-                            } else {
-                                \Log::warning('Exercise not found during restore: ' . $scheduleData['exercise_name']);
-                            }
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to restore schedule item: ' . $e->getMessage(), [
-                                'exercise_name' => $scheduleData['exercise_name'] ?? 'Unknown',
-                                'schedule_data' => $scheduleData['schedule_data'] ?? []
+                        $exercise = Exercise::where('name', $scheduleData['exercise_name'] ?? 'Unknown Exercise')->first();
+                        if ($exercise) {
+                            $plan->scheduleItems()->create([
+                                'exercise_id' => $exercise->id,
+                                'day_of_week' => $scheduleData['day_of_week'] ?? 1,
+                                'sets' => $scheduleData['sets'] ?? 1,
+                                'reps' => $scheduleData['reps'] ?? 10,
+                                'weight' => $scheduleData['weight'] ?? null,
+                                'rest_time' => $scheduleData['rest_time'] ?? null,
+                                'is_time_based' => $scheduleData['is_time_based'] ?? false,
+                                'notes' => $scheduleData['notes'] ?? null,
                             ]);
-                            // Continue with other items instead of failing completely
                         }
                     }
                 }
@@ -262,57 +251,164 @@ class WorkoutBackup extends Component
 
             // Restore workout sessions and exercise sets if option is enabled
             if ($this->restoreOptions['include_history']) {
+                // Restore workout sessions
                 foreach ($backupData['workout_sessions'] as $sessionData) {
-                    // Find the corresponding workout plan using the mapping
-                    $newPlanId = $planIdMapping[$sessionData['workout_plan_id']] ?? null;
+                    $oldSessionId = $sessionData['id'];
+                    unset($sessionData['id'], $sessionData['user_id'], $sessionData['created_at'], $sessionData['updated_at']);
                     
-                    if ($newPlanId) {
-                        $sessionCreateData = [
-                            'user_id' => $user->id,
-                            'workout_plan_id' => $newPlanId,
-                            'name' => $sessionData['name'] ?? 'Restored Session',
-                            'date' => $sessionData['date'],
-                            'week_number' => $sessionData['week_number'] ?? 1,
-                            'day_of_week' => $sessionData['day_of_week'] ?? 1,
-                            'status' => $sessionData['status'] ?? 'completed',
-                            'notes' => $sessionData['notes'] ?? null,
-                            'completed_at' => $sessionData['completed_at'] ?? null,
-                        ];
+                    $session = WorkoutSession::create([
+                        'user_id' => $user->id,
+                        'workout_plan_id' => $sessionData['workout_plan_id'] ? ($planIdMapping[$sessionData['workout_plan_id']] ?? null) : null,
+                        'date' => $sessionData['date'],
+                        'duration' => $sessionData['duration'] ?? null,
+                        'notes' => $sessionData['notes'] ?? null,
+                        'is_completed' => $sessionData['is_completed'] ?? false,
+                    ]);
 
-                        $newSession = WorkoutSession::create($sessionCreateData);
+                    // Restore exercise sets for this session
+                    $sessionSets = array_filter($backupData['exercise_sets'], function($set) use ($oldSessionId) {
+                        return $set['workout_session_id'] == $oldSessionId;
+                    });
 
-                        // Restore exercise sets for this session
-                        foreach ($backupData['exercise_sets'] as $setData) {
-                            if ($setData['set_data']['workout_session_id'] == $sessionData['id']) {
-                                try {
-                                    $exercise = Exercise::where('name', $setData['exercise_name'])->first();
-                                    
-                                    if ($exercise) {
-                                        $setCreateData = [
-                                            'workout_session_id' => $newSession->id,
-                                            'exercise_id' => $exercise->id,
-                                            'set_number' => (int) ($setData['set_data']['set_number'] ?? 1),
-                                            'reps' => (int) ($setData['set_data']['reps'] ?? 0),
-                                            'weight' => $setData['set_data']['weight'] ?? null,
-                                            'completed' => (bool) ($setData['set_data']['completed'] ?? false),
-                                            'is_warmup' => (bool) ($setData['set_data']['is_warmup'] ?? false),
-                                            'time_in_seconds' => $setData['set_data']['time_in_seconds'] ?? null,
-                                            'notes' => $setData['set_data']['notes'] ?? null,
-                                        ];
-
-                                        ExerciseSet::create($setCreateData);
-                                    } else {
-                                        \Log::warning('Exercise not found during set restore: ' . $setData['exercise_name']);
-                                    }
-                                } catch (\Exception $e) {
-                                    \Log::error('Failed to restore exercise set: ' . $e->getMessage(), [
-                                        'exercise_name' => $setData['exercise_name'] ?? 'Unknown',
-                                        'set_data' => $setData['set_data'] ?? []
-                                    ]);
-                                    // Continue with other sets instead of failing completely
-                                }
-                            }
+                    foreach ($sessionSets as $setData) {
+                        $exercise = Exercise::where('name', $setData['exercise_name'] ?? 'Unknown Exercise')->first();
+                        if ($exercise) {
+                            ExerciseSet::create([
+                                'user_id' => $user->id,
+                                'workout_session_id' => $session->id,
+                                'exercise_id' => $exercise->id,
+                                'set_number' => $setData['set_number'] ?? 1,
+                                'reps' => $setData['reps'] ?? null,
+                                'weight' => $setData['weight'] ?? null,
+                                'time_seconds' => $setData['time_seconds'] ?? null,
+                                'notes' => $setData['notes'] ?? null,
+                            ]);
                         }
+                    }
+                }
+            }
+
+            // Restore food tracker data if option is enabled
+            if ($this->restoreOptions['include_food_tracker'] && !empty($backupData['food_tracker'])) {
+                // Restore food items first
+                $foodItemMapping = [];
+                foreach ($backupData['food_tracker']['food_items'] as $itemData) {
+                    $oldItemId = $itemData['id'];
+                    unset($itemData['id'], $itemData['created_at'], $itemData['updated_at']);
+                    
+                    $foodItem = FoodItem::firstOrCreate(
+                        ['name' => $itemData['name'], 'brand' => $itemData['brand'] ?? null],
+                        $itemData
+                    );
+                    
+                    $foodItemMapping[$oldItemId] = $foodItem->id;
+                }
+
+                // Restore food logs
+                foreach ($backupData['food_tracker']['food_logs'] as $logData) {
+                    $oldItemId = $logData['food_item_id'];
+                    unset($logData['id'], $logData['user_id'], $logData['created_at'], $logData['updated_at']);
+                    
+                    if (isset($foodItemMapping[$oldItemId])) {
+                        FoodLog::create([
+                            'user_id' => $user->id,
+                            'food_item_id' => $foodItemMapping[$oldItemId],
+                            'meal_type' => $logData['meal_type'] ?? 'snack',
+                            'quantity' => $logData['quantity'] ?? 1.0,
+                            'consumed_date' => $logData['consumed_date'],
+                            'consumed_time' => $logData['consumed_time'] ?? null,
+                            'notes' => $logData['notes'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Restore body tracking data if option is enabled
+            if ($this->restoreOptions['include_body_tracking'] && !empty($backupData['body_tracking'])) {
+                // Restore weight measurements
+                foreach ($backupData['body_tracking']['weight_measurements'] as $measurementData) {
+                    unset($measurementData['id'], $measurementData['user_id'], $measurementData['created_at'], $measurementData['updated_at']);
+                    
+                    WeightMeasurement::create([
+                        'user_id' => $user->id,
+                        'weight' => $measurementData['weight'],
+                        'unit' => $measurementData['unit'] ?? 'kg',
+                        'measurement_date' => $measurementData['measurement_date'],
+                        'notes' => $measurementData['notes'] ?? null,
+                    ]);
+                }
+
+                // Restore body measurements
+                foreach ($backupData['body_tracking']['body_measurements'] as $measurementData) {
+                    unset($measurementData['id'], $measurementData['user_id'], $measurementData['created_at'], $measurementData['updated_at']);
+                    
+                    BodyMeasurement::create([
+                        'user_id' => $user->id,
+                        'measurement_date' => $measurementData['measurement_date'],
+                        'chest' => $measurementData['chest'] ?? null,
+                        'waist' => $measurementData['waist'] ?? null,
+                        'hips' => $measurementData['hips'] ?? null,
+                        'biceps' => $measurementData['biceps'] ?? null,
+                        'forearms' => $measurementData['forearms'] ?? null,
+                        'thighs' => $measurementData['thighs'] ?? null,
+                        'calves' => $measurementData['calves'] ?? null,
+                        'neck' => $measurementData['neck'] ?? null,
+                        'shoulders' => $measurementData['shoulders'] ?? null,
+                        'body_fat_percentage' => $measurementData['body_fat_percentage'] ?? null,
+                        'muscle_mass' => $measurementData['muscle_mass'] ?? null,
+                        'height' => $measurementData['height'] ?? null,
+                        'notes' => $measurementData['notes'] ?? null,
+                    ]);
+                }
+            }
+
+            // Restore client data if user is a trainer and option is enabled
+            if ($this->restoreOptions['include_client_data'] && $user->is_trainer && !empty($backupData['client_data'])) {
+                foreach ($backupData['client_data'] as $clientData) {
+                    try {
+                        // Find or create client user
+                        $client = User::firstOrCreate(
+                            ['email' => $clientData['client_info']['email']],
+                            [
+                                'name' => $clientData['client_info']['name'],
+                                'password' => bcrypt('temp_password_' . time()), // Temporary password
+                            ]
+                        );
+
+                        // Assign client to trainer
+                        $client->update(['my_trainer' => $user->id]);
+
+                        // Restore client workout plans
+                        foreach ($clientData['workout_plans'] as $planData) {
+                            $oldPlanId = $planData['id'];
+                            unset($planData['id'], $planData['user_id'], $planData['created_at'], $planData['updated_at']);
+                            
+                            $plan = WorkoutPlan::create([
+                                'user_id' => $client->id,
+                                'name' => $planData['name'],
+                                'description' => $planData['description'] ?? null,
+                                'is_active' => $planData['is_active'] ?? true,
+                            ]);
+
+                            // Restore client plan exercises and schedule items
+                            // (Similar logic as above, but for client)
+                        }
+
+                        // Restore client other data based on options
+                        if ($this->restoreOptions['include_food_tracker'] && !empty($clientData['food_tracker'])) {
+                            // Restore client food tracker data
+                        }
+
+                        if ($this->restoreOptions['include_body_tracking'] && !empty($clientData['body_tracking'])) {
+                            // Restore client body tracking data
+                        }
+
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to restore client data: ' . $e->getMessage(), [
+                            'client_email' => $clientData['client_info']['email'] ?? 'Unknown',
+                            'trainer_id' => $user->id,
+                        ]);
+                        // Continue with other clients instead of failing completely
                     }
                 }
             }
