@@ -51,7 +51,14 @@ class QuitSmokingTracker extends Component
     {
         // In a real app, this would load from database
         // For now, we'll use session storage
-        $this->smokingLogs = session('smoking_logs', []);
+        $sessionLogs = session('smoking_logs', []);
+        
+        // Ensure we always have an array, not an object
+        if (!is_array($sessionLogs)) {
+            $sessionLogs = [];
+        }
+        
+        $this->smokingLogs = $sessionLogs;
         $this->calculateTotals();
     }
 
@@ -61,6 +68,7 @@ class QuitSmokingTracker extends Component
         $endDate = Carbon::parse($this->targetQuitDate);
         $totalDays = $startDate->diffInDays($endDate);
         
+        // Ensure reductionPlan is always an array
         $this->reductionPlan = [];
         $currentCigarettes = $this->cigarettesPerDay;
         
@@ -83,6 +91,11 @@ class QuitSmokingTracker extends Component
 
     public function getActualCigarettesForDate($date)
     {
+        // Ensure smokingLogs is always an array
+        if (!is_array($this->smokingLogs)) {
+            $this->smokingLogs = [];
+        }
+        
         $dayLogs = array_filter($this->smokingLogs, function($log) use ($date) {
             return $log['date'] === $date;
         });
@@ -123,6 +136,11 @@ class QuitSmokingTracker extends Component
             'timestamp' => now()->timestamp,
         ];
 
+        // Ensure smokingLogs is always an array
+        if (!is_array($this->smokingLogs)) {
+            $this->smokingLogs = [];
+        }
+        
         $this->smokingLogs[] = $log;
         session(['smoking_logs' => $this->smokingLogs]);
         
@@ -139,6 +157,11 @@ class QuitSmokingTracker extends Component
 
     public function deleteSmokingLog($logId)
     {
+        // Ensure smokingLogs is always an array
+        if (!is_array($this->smokingLogs)) {
+            $this->smokingLogs = [];
+        }
+        
         $this->smokingLogs = array_filter($this->smokingLogs, function($log) use ($logId) {
             return $log['id'] !== $logId;
         });
@@ -155,6 +178,11 @@ class QuitSmokingTracker extends Component
 
     public function calculateTotals()
     {
+        // Ensure smokingLogs is always an array
+        if (!is_array($this->smokingLogs)) {
+            $this->smokingLogs = [];
+        }
+        
         $this->totalCigarettes = array_sum(array_column($this->smokingLogs, 'cigarettes'));
         $this->totalCost = ($this->totalCigarettes / $this->cigarettesPerPack) * $this->packPrice;
         
@@ -243,7 +271,12 @@ class QuitSmokingTracker extends Component
             $this->dispatch('show-push-notification', [
                 'title' => $title,
                 'body' => $body,
-                'data' => $data
+                'data' => [
+                    'type' => $data['type'],
+                    'remaining_cigarettes' => $data['remaining_cigarettes'],
+                    'next_time' => $data['next_time'],
+                    'user_id' => $data['user_id']
+                ]
             ]);
             
             Log::info("Smoke notification scheduled for user " . Auth::id() . " at " . $nextTime->format('H:i:s'));
