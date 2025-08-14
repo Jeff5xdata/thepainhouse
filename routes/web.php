@@ -74,8 +74,11 @@ Route::middleware(['auth', 'verified', 'throttle:120,1'])->group(function () {
     
     // Weight and body measurement tracking routes
     Route::get('/weight-tracker', WeightTracker::class)->name('weight.tracker');
-Route::get('/body-measurements', BodyMeasurementTracker::class)->name('body.measurements');
-Route::get('/progress-charts', ProgressCharts::class)->name('progress.charts');
+    Route::get('/body-measurements', BodyMeasurementTracker::class)->name('body.measurements');
+    Route::get('/progress-charts', ProgressCharts::class)->name('progress.charts');
+    
+    // Quit smoking tracker route
+    Route::get('/quit-smoking', \App\Livewire\QuitSmokingTracker::class)->name('quit.smoking');
 
 // Trainer routes for client weight and body measurements
 Route::get('/trainer/client/{clientId}/weight-tracker', \App\Livewire\TrainerWeightTracker::class)->name('trainer.client.weight');

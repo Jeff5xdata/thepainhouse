@@ -2,6 +2,7 @@ import "./bootstrap";
 import Alpine from "alpinejs";
 import persist from "@alpinejs/persist";
 import "./components/barcode-scanner.js";
+import "./components/smoking-notifications.js";
 
 // Initialize Alpine.js framework if it hasn't been initialized yet
 // Alpine.js provides reactive functionality for the application

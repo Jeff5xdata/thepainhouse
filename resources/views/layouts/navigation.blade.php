@@ -210,6 +210,16 @@
                                         {{ __('Progress Charts') }}
                                     </a>
 
+                                    <a href="{{ route('quit.smoking') }}" 
+                                        class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
+                                        @click="menuOpen = false"
+                                        wire:navigate>
+                                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12M8 7l8 8M8 15l8-8" />
+                                        </svg>
+                                        {{ __('Quit Smoking') }}
+                                    </a>
+
                                     <a href="{{ route('workout.session') }}" 
                                         class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" 
                                         @click="menuOpen = false"

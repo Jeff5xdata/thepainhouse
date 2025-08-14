@@ -16,6 +16,18 @@ class WorkoutSettings extends Component
     public $defaultWorkSets = 3;
     public $defaultWorkReps = 10;
     public $weightUnitPreference = 'kg';
+    
+    // Quit Smoking Settings
+    public $quitDate;
+    public $packPrice = 10.00;
+    public $cigarettesPerPack = 20;
+    public $maxCigarettesPerDay = 0;
+    public $enableReductionPlan = false;
+    
+    // Push Notification Settings
+    public $enableSmokeReminders = true;
+    public $enableDailyProgress = true;
+    public $enableMilestoneCelebrations = true;
 
     public function mount()
     {
@@ -44,6 +56,18 @@ class WorkoutSettings extends Component
 
         // Load user's weight unit preference
         $this->weightUnitPreference = auth()->user()->getPreferredWeightUnit();
+        
+        // Load quit smoking settings
+        $this->quitDate = auth()->user()->quit_date;
+        $this->packPrice = auth()->user()->pack_price ?? 10.00;
+        $this->cigarettesPerPack = auth()->user()->cigarettes_per_pack ?? 20;
+        $this->maxCigarettesPerDay = auth()->user()->max_cigarettes_per_day ?? 0;
+        $this->enableReductionPlan = auth()->user()->enable_reduction_plan ?? false;
+        
+        // Load push notification settings
+        $this->enableSmokeReminders = auth()->user()->enable_smoke_reminders ?? true;
+        $this->enableDailyProgress = auth()->user()->enable_daily_progress ?? true;
+        $this->enableMilestoneCelebrations = auth()->user()->enable_milestone_celebrations ?? true;
     }
 
     public function saveSettings()
@@ -75,6 +99,32 @@ class WorkoutSettings extends Component
         // Update user's weight unit preference
         auth()->user()->update([
             'weight_unit_preference' => $this->weightUnitPreference,
+        ]);
+
+        $this->dispatch('settings-saved');
+    }
+    
+    public function saveQuitSmokingSettings()
+    {
+        // Validate the quit smoking input
+        $this->validate([
+            'quitDate' => 'nullable|date|before_or_equal:today',
+            'packPrice' => 'required|numeric|min:0|max:1000',
+            'cigarettesPerPack' => 'required|integer|min:1|max:50',
+            'maxCigarettesPerDay' => 'required|integer|min:0|max:100',
+            'enableReductionPlan' => 'boolean',
+        ]);
+
+        // Update user's quit smoking settings
+        auth()->user()->update([
+            'quit_date' => $this->quitDate,
+            'pack_price' => $this->packPrice,
+            'cigarettes_per_pack' => $this->cigarettesPerPack,
+            'max_cigarettes_per_day' => $this->maxCigarettesPerDay,
+            'enable_reduction_plan' => $this->enableReductionPlan,
+            'enable_smoke_reminders' => $this->enableSmokeReminders,
+            'enable_daily_progress' => $this->enableDailyProgress,
+            'enable_milestone_celebrations' => $this->enableMilestoneCelebrations,
         ]);
 
         $this->dispatch('settings-saved');

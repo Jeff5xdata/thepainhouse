@@ -53,3 +53,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Get conversation messages with a specific user
     Route::get('/messages/conversation/{userId}', [MessageController::class, 'conversation']);
 });
+
+// Push Notification Routes
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Store push notification subscription
+    Route::post('/push-subscription', function (Request $request) {
+        $user = $request->user();
+        $user->update([
+            'push_subscription' => $request->all()
+        ]);
+        
+        return response()->json(['message' => 'Subscription saved successfully']);
+    });
+});

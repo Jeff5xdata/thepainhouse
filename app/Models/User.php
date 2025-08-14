@@ -37,6 +37,15 @@ class User extends Authenticatable
         'is_trainer',   // Boolean flag indicating if user is a trainer
         'my_trainer',   // Foreign key to the user's trainer (if they have one)
         'weight_unit_preference', // User's preferred weight unit (kg or lbs)
+        'quit_date',    // Date when user quit smoking
+        'pack_price',   // Price of cigarette pack
+        'cigarettes_per_pack', // Number of cigarettes per pack
+        'max_cigarettes_per_day', // Maximum cigarettes allowed per day
+        'enable_reduction_plan', // Whether to enable 30-day reduction plan
+        'push_subscription', // Push notification subscription data
+        'enable_smoke_reminders', // Whether to enable smoke time reminders
+        'enable_daily_progress', // Whether to enable daily progress updates
+        'enable_milestone_celebrations', // Whether to enable milestone celebrations
     ];
 
     /**
@@ -63,6 +72,13 @@ class User extends Authenticatable
             'password' => 'hashed',             // Automatically hash password
             'owner' => 'boolean',               // Cast to boolean
             'is_trainer' => 'boolean',          // Cast to boolean
+            'quit_date' => 'date',              // Cast to Carbon date instance
+            'pack_price' => 'decimal:2',        // Cast to decimal with 2 places
+            'enable_reduction_plan' => 'boolean', // Cast to boolean
+            'push_subscription' => 'array',     // Cast to array
+            'enable_smoke_reminders' => 'boolean', // Cast to boolean
+            'enable_daily_progress' => 'boolean', // Cast to boolean
+            'enable_milestone_celebrations' => 'boolean', // Cast to boolean
         ];
     }
 
